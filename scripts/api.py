@@ -5,16 +5,16 @@ from fastapi import FastAPI
 
 from modules import shared, script_callbacks as script_callbacks
 
-from civitai.api import get_model_version, download
+import extensions.sd_civitai_extension.civitai.api as civitai
 
 def civitaiAPI(demo: gr.Blocks, app: FastAPI):
     @app.get("/install/{id}")
     async def install(id: str):
-        to_install = get_model_version(id)
+        to_install = civitai.get_model_version(id)
         print("Civitai Installing: " + to_install['name'])
         url = to_install['downloadUrl']
         type = to_install['type']
-        task = asyncio.create_task(download(url, type))
+        task = asyncio.create_task(civitai.download(url, type))
         return {"status": "success"}
 
 try:

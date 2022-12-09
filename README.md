@@ -10,3 +10,7 @@ All the models right inside the UI you use to generate.
 - [ ] Post trained Dreambooth models
 - [ ] Post trained Textual Inversions
 - [ ] Post trained Hypernetworks
+
+## Here to help?
+
+Hop into the development channel in our [Discord server](https://discord.gg/UwX5wKwm6c) and let's chat!
