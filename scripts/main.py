@@ -46,4 +46,4 @@ def on_ui_tabs():
     civitai_page_size.change(fn=search_models, inputs=[civitai_query, civitai_sort, civitai_sort_period, civitai_tag, civitai_creator, civitai_page, civitai_page_size], outputs=[model_output, civitai_current_page])
 
 
-script_callbacks.on_ui_tabs(on_ui_tabs)
+# script_callbacks.on_ui_tabs(on_ui_tabs)

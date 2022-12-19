@@ -1,0 +1,10 @@
+__pycache__
+/repositories
+/venv
+/outputs
+/log
+/webui.settings.bat
+/.idea
+.vscode
+/test/stdout.txt
+/test/stderr.txt
