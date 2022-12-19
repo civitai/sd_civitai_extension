@@ -3,7 +3,9 @@ import os
 import requests
 import re
 
-from modules import shared, sd_models, generation_parameters_copypaste
+from basicsr.utils.download_util import load_file_from_url
+from modules import shared, sd_models, modelloader
+from modules.paths import models_path
 
 try:
     base_url = shared.cmd_opts.civitai_endpoint
@@ -76,48 +78,18 @@ def get_tags(query, page=1, page_size=20):
 #endregion API
 
 #region Downloading
-download_locations = {
-    'Checkpoint': os.path.join('models', 'stable-diffusion'),
-    'TextualInversion': os.path.join('embeddings'),
-    'AestheticGradient': os.path.join('extensions/stable-diffusion-webui-aesthetic-gradients','aesthetic_embeddings'),
-    'Hypernetwork': os.path.join('models', 'hypernetworks'),
-}
-
-async def download(url, type):
-    """Download a file from the Civitai API using requests and save file to type specific location with the filename from the content disposition header."""
-    log(f'Downloading {type}: {url}')
-    response = requests.get(url, stream=True)
-
-    if response.status_code != 200:
-        raise Exception(f'Error: {response.status_code}')
-
-    filename = response.headers['content-disposition'].split('filename=')[1].strip('"')
-    dest = os.path.join(download_locations[type], filename)
-
-    if os.path.exists(dest):
-        log(f'File already exists: {dest}')
-        return (filename, False)
-
-    with open(dest, 'wb') as f:
-        for chunk in response.iter_content(chunk_size=4096):
-            if chunk: f.write(chunk)
-
-    log(f'Downloaded: {dest}')
-
-    return (filename, True)
-
-async def run_model(name, url):
+async def load_model(name, url):
     model = sd_models.get_closet_checkpoint_match(name)
 
     if model is None:
-        (filename, downloaded) = await download(url, 'Checkpoint')
-        if downloaded: sd_models.list_models()
-        model = sd_models.get_closet_checkpoint_match(filename)
+        log('Downloading model')
+        modelloader.load_models(os.path.join(models_path, 'stable-diffusion', name), url, download_name=name)
+        sd_models.list_models()
+        model = sd_models.get_closet_checkpoint_match(name)
     elif shared.opts.sd_model_checkpoint == model.title:
         log('Model already loaded')
-        return model.filename
+        return
     else:
-        filename = model.filename
         log('Found model in model list')
 
     if model is not None:
@@ -126,23 +98,17 @@ async def run_model(name, url):
         shared.opts.save(shared.config_filename)
     else: log('Could not find model in model list')
 
-    return filename
 
+async def download_textual_inversion(name, url):
+    modelloader.load_models(os.path.join('embeddings', name), url, download_name=name)
 
-async def download_textual_inversion(url):
-    (filename) = await download(url, 'TextualInversion')
-    return filename
+async def download_aesthetic_gradient(name, url):
+    modelloader.load_models(os.path.join('extensions/stable-diffusion-webui-aesthetic-gradients','aesthetic_embeddings', name), url, download_name=name)
 
-async def download_aesthetic_gradient(url):
-    (filename, downloaded) = await download(url, 'AestheticGradient')
-
-    return filename
-
-async def download_hypernetwork(url):
-    (filename, downloaded) = await download(url, 'Hypernetwork')
-    shared.opts.sd_hypernetwork = filename
+async def load_hypernetwork(name, url):
+    modelloader.load_models(os.path.join(models_path, 'hypernetworks', name), url, download_name=name)
+    shared.opts.sd_hypernetwork = name
+    shared.opts.save(shared.config_filename)
     shared.reload_hypernetworks()
-
-    return filename
 
 #endregion Downloading
