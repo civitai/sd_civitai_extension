@@ -84,6 +84,9 @@ def load_if_missing(path, url):
     dir, file = os.path.split(path)
     load_file_from_url(url, dir, True, file)
 
+async def load_config(name, url):
+    load_if_missing(os.path.join(models_path, 'stable-diffusion', name), url)
+
 async def load_model(name, url):
     model = sd_models.get_closet_checkpoint_match(name)
 

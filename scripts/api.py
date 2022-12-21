@@ -34,7 +34,11 @@ def civitaiAPI(demo: gr.Blocks, app: FastAPI):
         name = primary_file['name']
         url = to_run['downloadUrl']
         type = to_run['model']['type']
-        if type == 'Checkpoint': await asyncio.create_task(civitai.load_model(name, url))
+        if type == 'Checkpoint':
+            config_file = [x for x in to_run['files'] if x['type'] == "Config"][0]
+            if config_file is not None:
+                await asyncio.create_task(civitai.load_config(config_file['name'], config_file['downloadUrl']))
+            await asyncio.create_task(civitai.load_model(name, url))
         elif type == 'TextualInversion': await asyncio.create_task(civitai.download_textual_inversion(name, url))
         elif type == 'AestheticGradient': await asyncio.create_task(civitai.download_aesthetic_gradient(name, url))
         elif type == 'Hypernetwork': await asyncio.create_task(civitai.load_hypernetwork(name, url))
