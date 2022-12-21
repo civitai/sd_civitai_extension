@@ -4,7 +4,7 @@ import requests
 import re
 
 from basicsr.utils.download_util import load_file_from_url
-from modules import shared, sd_models, modelloader
+from modules import shared, sd_models
 from modules.paths import models_path
 
 try:
@@ -78,12 +78,18 @@ def get_tags(query, page=1, page_size=20):
 #endregion API
 
 #region Downloading
+def load_if_missing(path, url):
+    if os.path.exists(path): return
+
+    dir, file = os.path.split(path)
+    load_file_from_url(url, dir, True, file)
+
 async def load_model(name, url):
     model = sd_models.get_closet_checkpoint_match(name)
 
     if model is None:
         log('Downloading model')
-        modelloader.load_models(os.path.join(models_path, 'stable-diffusion', name), url, download_name=name)
+        load_if_missing(os.path.join(models_path, 'stable-diffusion', name), url)
         sd_models.list_models()
         model = sd_models.get_closet_checkpoint_match(name)
     elif shared.opts.sd_model_checkpoint == model.title:
@@ -100,13 +106,13 @@ async def load_model(name, url):
 
 
 async def download_textual_inversion(name, url):
-    modelloader.load_models(os.path.join('embeddings', name), url, download_name=name)
+    load_if_missing(os.path.join('embeddings', name), url)
 
 async def download_aesthetic_gradient(name, url):
-    modelloader.load_models(os.path.join('extensions/stable-diffusion-webui-aesthetic-gradients','aesthetic_embeddings', name), url, download_name=name)
+    load_if_missing(os.path.join('extensions/stable-diffusion-webui-aesthetic-gradients','aesthetic_embeddings', name), url)
 
 async def load_hypernetwork(name, url):
-    modelloader.load_models(os.path.join(models_path, 'hypernetworks', name), url, download_name=name)
+    load_if_missing(os.path.join(models_path, 'hypernetworks', name), url)
     shared.opts.sd_hypernetwork = name
     shared.opts.save(shared.config_filename)
     shared.reload_hypernetworks()
