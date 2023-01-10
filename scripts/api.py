@@ -4,9 +4,14 @@ import gradio as gr
 from fastapi import FastAPI
 
 from modules import shared, script_callbacks as script_callbacks
+from modules.api.api import encode_pil_to_base64, validate_sampler_name
+from modules.api.models import StableDiffusionTxt2ImgProcessingAPI, TextToImageResponse
+from modules.processing import StableDiffusionProcessingTxt2Img, process_images
 from modules.sd_models import checkpoints_list
+from modules.call_queue import queue_lock
 
 import extensions.sd_civitai_extension.civitai.api as civitai
+from extensions.sd_civitai_extension.civitai.models import GenerateImageRequest
 
 def civitaiAPI(demo: gr.Blocks, app: FastAPI):
     # To detect if the API is loaded
@@ -32,12 +37,14 @@ def civitaiAPI(demo: gr.Blocks, app: FastAPI):
         civitai.log(f'Running: {to_run_name}')
         primary_file = [x for x in to_run['files'] if x['primary'] == True][0]
         name = primary_file['name']
+        hash = primary_file['hashes']['AutoV1']
         url = to_run['downloadUrl']
         type = to_run['model']['type']
         if type == 'Checkpoint':
-            config_file = [x for x in to_run['files'] if x['type'] == "Config"][0]
-            if config_file is not None:
+            try:
+                config_file = [x for x in to_run['files'] if x['type'] == "Config"][0]
                 await asyncio.create_task(civitai.load_config(config_file['name'], config_file['downloadUrl']))
+            except IndexError: config_file = None
             await asyncio.create_task(civitai.load_model(name, url))
         elif type == 'TextualInversion': await asyncio.create_task(civitai.download_textual_inversion(name, url))
         elif type == 'AestheticGradient': await asyncio.create_task(civitai.download_aesthetic_gradient(name, url))
@@ -45,6 +52,47 @@ def civitaiAPI(demo: gr.Blocks, app: FastAPI):
 
         civitai.log(f'Loaded: {to_run_name}')
         return {"status": "success"}
+
+    @app.post("/civitai/v1/txt2img", response_model=TextToImageResponse)
+    def txt2img(txt2imgreq: StableDiffusionTxt2ImgProcessingAPI):
+        populate = txt2imgreq.copy(update={ # Override __init__ params
+            "sd_model": shared.sd_model,
+            "sampler_name": validate_sampler_name(txt2imgreq.sampler_name or txt2imgreq.sampler_index),
+            "do_not_save_samples": True,
+            "do_not_save_grid": True
+            }
+        )
+        if populate.sampler_name:
+            populate.sampler_index = None  # prevent a warning later on
+        p = StableDiffusionProcessingTxt2Img(**vars(populate))
+        # Override object param
+
+        shared.state.begin()
+
+        with queue_lock:
+            processed = process_images(p)
+
+        shared.state.end()
+
+        b64images = list(map(encode_pil_to_base64, processed.images))
+
+        return TextToImageResponse(images=b64images, parameters=vars(txt2imgreq), info=processed.js())
+
+    @app.post("/civitai/v1/generate/image", response_model=TextToImageResponse)
+    def generate_image(req: GenerateImageRequest):
+        return txt2img(
+            StableDiffusionTxt2ImgProcessingAPI(
+                prompt=req.params.prompt,
+                negative_prompt=req.params.negativePrompt,
+                seed=req.params.seed,
+                steps=req.params.steps,
+                width=req.params.width,
+                height=req.params.height,
+                cfg_scale=req.params.cfgScale,
+                n_iter=req.quantity,
+                batch_size=req.batchSize,
+            )
+        )
 
 script_callbacks.on_app_started(civitaiAPI)
 civitai.log("API loaded")

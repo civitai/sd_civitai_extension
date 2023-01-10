@@ -36,7 +36,13 @@ async function handlePrompt(prompt, andGenerate = false, delayMs = 3000) {
     if (andGenerate) {
         await delay(delayMs);
         await generate();
+        notifyParent({generate: true});
     }
+}
+
+function notifyParent(msg) {
+    if (child && child.sendMessageToParent)
+        child.sendMessageToParent(msg);
 }
 
 async function refreshModels() {
@@ -44,8 +50,9 @@ async function refreshModels() {
     refreshModelsButton.click();
 }
 
+let child;
 async function hookChild() {
-    const child = new AcrossTabs.default.Child({
+    child = new AcrossTabs.default.Child({
         // origin: 'https://civitai.com',
         origin: 'http://localhost:3000',
         onParentCommunication: commandHandler
