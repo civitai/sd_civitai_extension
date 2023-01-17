@@ -4,7 +4,7 @@ import requests
 import re
 
 from basicsr.utils.download_util import load_file_from_url
-from modules import shared, sd_models
+from modules import shared, sd_models, sd_vae
 from modules.paths import models_path
 
 try:
@@ -79,7 +79,8 @@ def get_tags(query, page=1, page_size=20):
 
 #region Downloading
 def load_if_missing(path, url):
-    if os.path.exists(path): return
+    if os.path.exists(path): return True
+    if url is None: return False
 
     dir, file = os.path.split(path)
     load_file_from_url(url, dir, True, file)
@@ -87,10 +88,11 @@ def load_if_missing(path, url):
 async def load_config(name, url):
     load_if_missing(os.path.join(models_path, 'stable-diffusion', name), url)
 
-async def load_model(name, url):
-    model = sd_models.get_closet_checkpoint_match(name)
+async def load_model(name, url=None):
+    if shared.opts.sd_model_checkpoint == name: return
 
-    if model is None:
+    model = sd_models.get_closet_checkpoint_match(name)
+    if model is None and url is not None:
         log('Downloading model')
         load_if_missing(os.path.join(models_path, 'stable-diffusion', name), url)
         sd_models.list_models()
@@ -114,10 +116,48 @@ async def download_textual_inversion(name, url):
 async def download_aesthetic_gradient(name, url):
     load_if_missing(os.path.join('extensions/stable-diffusion-webui-aesthetic-gradients','aesthetic_embeddings', name), url)
 
-async def load_hypernetwork(name, url):
-    load_if_missing(os.path.join(models_path, 'hypernetworks', name), url)
+async def load_hypernetwork(name, url=None):
+    if shared.opts.sd_hypernetwork == name:
+        log('Hypernetwork already loaded')
+        return
+
+    full_path = os.path.join(models_path, 'hypernetworks', name);
+    if not full_path.endswith('.pt'): full_path += '.pt'
+    isAvailable = load_if_missing(full_path, url)
+    if not isAvailable:
+        log('Could not find hypernetwork')
+        return
+
     shared.opts.sd_hypernetwork = name
     shared.opts.save(shared.config_filename)
     shared.reload_hypernetworks()
+
+def clear_hypernetwork():
+    if (shared.opts.sd_hypernetwork == 'None'): return
+
+    log('Clearing hypernetwork')
+    shared.opts.sd_hypernetwork = 'None'
+    shared.opts.save(shared.config_filename)
+    shared.reload_hypernetworks()
+
+async def load_vae(name, url=None):
+    if not name.endswith('.pt'): name += '.pt'
+    full_path = os.path.join(models_path, 'VAE', name)
+
+    if sd_vae.loaded_vae_file is not None and sd_vae.get_filename(sd_vae.loaded_vae_file) == name:
+        log('VAE already loaded')
+        return
+
+    isAvailable = load_if_missing(full_path, url)
+    if not isAvailable:
+        log('Could not find VAE')
+        return
+
+    sd_vae.refresh_vae_list()
+    sd_vae.load_vae(shared.sd_model, full_path)
+
+def clear_vae():
+    log('Clearing VAE')
+    sd_vae.clear_loaded_vae()
 
 #endregion Downloading

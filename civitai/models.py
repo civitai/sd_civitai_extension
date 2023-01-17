@@ -9,10 +9,13 @@ class ImageParams(BaseModel):
     width: int = Field(default=512, title="Width", description="The width of the image to generate.")
     height: int = Field(default=512, title="Height", description="The height of the image to generate.")
     cfgScale: float = Field(default=7.5, title="Scale", description="The guidance scale for image generation.")
+    hypernetworkStrength: float = Field(default=None, title="Hypernetwork Strength", description="The strength of the hypernetwork for image generation.")
 
 
 class GenerateImageRequest(BaseModel):
-    requestId: str = Field(default="", title="Request ID", description="A unique ID for this request.")
     quantity: int = Field(default=1, title="Quantity", description="The number of images to generate.")
     batchSize: int = Field(default=1, title="Batch Size", description="The number of images to generate in each batch.")
+    model: str = Field(default=None, title="Model", description="The hash of the model to use when generating the images.")
+    vae: str = Field(default=None, title="VAE", description="The hash of the VAE to use when generating the images.")
+    hypernetwork: str = Field(default=None, title="Hypernetwork", description="The hash of the hypernetwork to use when generating the images.")
     params: ImageParams = Field(default=ImageParams(), title="Parameters", description="The parameters to use when generating the images.")

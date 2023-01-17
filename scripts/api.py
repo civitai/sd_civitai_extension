@@ -4,6 +4,7 @@ import gradio as gr
 from fastapi import FastAPI
 
 from modules import shared, script_callbacks as script_callbacks
+from modules.hypernetworks import hypernetwork
 from modules.api.api import encode_pil_to_base64, validate_sampler_name
 from modules.api.models import StableDiffusionTxt2ImgProcessingAPI, TextToImageResponse
 from modules.processing import StableDiffusionProcessingTxt2Img, process_images
@@ -56,7 +57,6 @@ def civitaiAPI(demo: gr.Blocks, app: FastAPI):
     @app.post("/civitai/v1/txt2img", response_model=TextToImageResponse)
     def txt2img(txt2imgreq: StableDiffusionTxt2ImgProcessingAPI):
         populate = txt2imgreq.copy(update={ # Override __init__ params
-            "sd_model": shared.sd_model,
             "sampler_name": validate_sampler_name(txt2imgreq.sampler_name or txt2imgreq.sampler_index),
             "do_not_save_samples": True,
             "do_not_save_grid": True
@@ -64,22 +64,32 @@ def civitaiAPI(demo: gr.Blocks, app: FastAPI):
         )
         if populate.sampler_name:
             populate.sampler_index = None  # prevent a warning later on
-        p = StableDiffusionProcessingTxt2Img(**vars(populate))
-        # Override object param
 
-        shared.state.begin()
+        args = vars(populate)
+        args.pop('script_name', None)
 
         with queue_lock:
-            processed = process_images(p)
+            p = StableDiffusionProcessingTxt2Img(sd_model=shared.sd_model, **args)
 
-        shared.state.end()
+            shared.state.begin()
+            processed = process_images(p)
+            shared.state.end()
 
         b64images = list(map(encode_pil_to_base64, processed.images))
 
         return TextToImageResponse(images=b64images, parameters=vars(txt2imgreq), info=processed.js())
 
     @app.post("/civitai/v1/generate/image", response_model=TextToImageResponse)
-    def generate_image(req: GenerateImageRequest):
+    async def generate_image(req: GenerateImageRequest):
+        if (req.vae is None): civitai.clear_vae()
+        if (req.hypernetwork is None): civitai.clear_hypernetwork()
+
+        if (req.model is not None): await asyncio.create_task(civitai.load_model(req.model))
+        if (req.hypernetwork is not None):
+            await asyncio.create_task(civitai.load_hypernetwork(req.hypernetwork))
+            hypernetwork.apply_strength(req.params.hypernetworkStrength)
+        if (req.vae is not None): await asyncio.create_task(civitai.load_vae(req.vae))
+
         return txt2img(
             StableDiffusionTxt2ImgProcessingAPI(
                 prompt=req.params.prompt,
