@@ -1,7 +1,7 @@
 # main ui
 import gradio as gr
 
-import extensions.sd_civitai_extension.civitai.api as civitai
+import extensions.sd_civitai_extension.civitai.lib as civitai
 
 from modules import shared, sd_models, script_callbacks
 
@@ -46,4 +46,14 @@ def on_ui_tabs():
     civitai_page_size.change(fn=search_models, inputs=[civitai_query, civitai_sort, civitai_sort_period, civitai_tag, civitai_creator, civitai_page, civitai_page_size], outputs=[model_output, civitai_current_page])
 
 
+# Automatically pull model with corresponding hash from Civitai
+def on_infotext_pasted(infotext, params):
+    if ("Model hash" not in params or shared.opts.disable_weights_auto_swap): return
+
+    model_hash = params["Model hash"]
+    model = civitai.get_model_by_hash(model_hash)
+    if (model is None):
+        civitai.fetch_model_by_hash(model_hash)
+
+script_callbacks.on_infotext_pasted(on_infotext_pasted)
 # script_callbacks.on_ui_tabs(on_ui_tabs)

@@ -1,4 +1,14 @@
+from enum import Enum
 from pydantic import BaseModel, Field
+
+class ResourceTypes(str, Enum):
+    Checkpoint = "Checkpoint"
+    CheckpointConfig = "CheckpointConfig"
+    TextualInversion = "TextualInversion"
+    AestheticGradient = "AestheticGradient"
+    Hypernetwork = "Hypernetwork"
+    LORA = "LORA"
+    VAE = "VAE"
 
 class ImageParams(BaseModel):
     prompt: str = Field(default="", title="Prompt", description="The prompt to use when generating the image.")
@@ -19,3 +29,9 @@ class GenerateImageRequest(BaseModel):
     vae: str = Field(default=None, title="VAE", description="The hash of the VAE to use when generating the images.")
     hypernetwork: str = Field(default=None, title="Hypernetwork", description="The hash of the hypernetwork to use when generating the images.")
     params: ImageParams = Field(default=ImageParams(), title="Parameters", description="The parameters to use when generating the images.")
+
+class ResourceRequest(BaseModel):
+    name: str = Field(default=None, title="Name", description="The name of the resource to download.")
+    type: ResourceTypes = Field(default=None, title="Type", description="The type of the resource to download.")
+    hash: str = Field(default=None, title="Hash", description="The SHA256 hash of the resource to download.")
+    url: str = Field(default=None, title="URL", description="The URL of the resource to download.", required=False)
