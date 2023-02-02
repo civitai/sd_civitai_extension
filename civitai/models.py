@@ -10,6 +10,11 @@ class ResourceTypes(str, Enum):
     LORA = "LORA"
     VAE = "VAE"
 
+class CommandTypes(str, Enum):
+    ResourcesList = "resources:list"
+    ResourcesAdd = "resources:add"
+    ResourcesRemove = "resources:remove"
+
 class ImageParams(BaseModel):
     prompt: str = Field(default="", title="Prompt", description="The prompt to use when generating the image.")
     negativePrompt: str = Field(default="", title="Negative Prompt", description="The negative prompt to use when generating the image.")
@@ -35,3 +40,34 @@ class ResourceRequest(BaseModel):
     type: ResourceTypes = Field(default=None, title="Type", description="The type of the resource to download.")
     hash: str = Field(default=None, title="Hash", description="The SHA256 hash of the resource to download.")
     url: str = Field(default=None, title="URL", description="The URL of the resource to download.", required=False)
+    previewImage: str = Field(default=None, title="Preview Image", description="The URL of the preview image.", required=False)
+    addons: list[str] = Field(default=[], title="Addons", description="The addons to download with the resource.", required=False)
+
+class Command(BaseModel):
+    id: str = Field(default=None, title="ID", description="The ID of the command.")
+    type: CommandTypes = Field(default=None, title="Type", description="The type of command to execute.")
+
+class CommandResourcesList(Command):
+    type: CommandTypes = Field(default=CommandTypes.ResourcesList, title="Type", description="The type of command to execute.")
+    types: list[ResourceTypes] = Field(default=[], title="Types", description="The types of resources to list.")
+
+class CommandResourcesAdd(Command):
+    type: CommandTypes = Field(default=CommandTypes.ResourcesAdd, title="Type", description="The type of command to execute.")
+    resources: list[ResourceRequest] = Field(default=[], title="Resources", description="The resources to add.")
+
+class ResourceRemoveRequest(BaseModel):
+    type: ResourceTypes = Field(default=None, title="Type", description="The type of the resource to remove.")
+    hash: str = Field(default=None, title="Hash", description="The SHA256 hash of the resource to remove.")
+
+class CommandResourcesRemove(Command):
+    type: CommandTypes = Field(default=CommandTypes.ResourcesRemove, title="Type", description="The type of command to execute.")
+    resources: list[ResourceRemoveRequest] = Field(default=[], title="Resources", description="The resources to remove.")
+
+class UpgradeKeyPayload(BaseModel):
+    key: str = Field(default=None, title="Key", description="The upgraded key.")
+
+class ErrorPayload(BaseModel):
+    msg: str = Field(default=None, title="Message", description="The error message.")
+
+class JoinedPayload(BaseModel):
+    type: str = Field(default=None, title="Type", description="The type of the client that joined.")

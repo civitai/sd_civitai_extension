@@ -1,29 +1,61 @@
 import json
 import os
+import shutil
+import tempfile
+import time
 import requests
-import re
+import glob
 
-from importlib import import_module
-from basicsr.utils.download_util import load_file_from_url
-from modules import shared, sd_models, sd_vae
+from tqdm import tqdm
+from modules import shared, sd_models, sd_vae, hashes
 from modules.paths import models_path
 from extensions.sd_civitai_extension.civitai.models import ResourceRequest
 
+#region shared variables
 try:
     base_url = shared.cmd_opts.civitai_endpoint
 except:
     base_url = 'https://civitai.com/api/v1'
+
+connected = False
+user_agent = 'CivitaiLink:Automatic1111'
+download_chunk_size = 8192
+#endregion
 
 #region Utils
 def log(message):
     """Log a message to the console."""
     print(f'Civitai: {message}')
 
-def parse_hypernetwork(string):
-    match = re.search(r'(.+)\(([^)]+)', string)
-    if match:
-        return {"name": match.group(1), "hash": match.group(2), "type": "Hypernetwork"}
-    return {"name": "", "hash": "", "type": "Hypernetwork"}
+def download_file(url, dest, on_progress=None):
+    if os.path.exists(dest):
+        log(f'File already exists: {dest}')
+
+    log(f'Downloading: "{url}" to {dest}\n')
+
+    response = requests.get(url, stream=True, headers={"User-Agent": user_agent})
+    total = int(response.headers.get('content-length', 0))
+    start_time = time.time()
+
+    dest = os.path.expanduser(dest)
+    dst_dir = os.path.dirname(dest)
+    f = tempfile.NamedTemporaryFile(delete=False, dir=dst_dir)
+
+    try:
+        current = 0
+        with tqdm(total=total, unit='B', unit_scale=True, unit_divisor=1024) as bar:
+            for data in response.iter_content(chunk_size=download_chunk_size):
+                current += len(data)
+                pos = f.write(data)
+                bar.update(pos)
+                if on_progress is not None:
+                    on_progress(current, total, start_time)
+        f.close()
+        shutil.move(f.name, dest)
+    finally:
+        f.close()
+        if os.path.exists(f.name):
+            os.remove(f.name)
 #endregion Utils
 
 #region API
@@ -31,7 +63,7 @@ def req(endpoint, method='GET', data=None, params=None, headers=None):
     """Make a request to the Civitai API."""
     if headers is None:
         headers = {}
-    headers['User-Agent'] = 'Automatic1111'
+    headers['User-Agent'] = user_agent
     if data is not None:
         data = json.dumps(data)
     if not endpoint.startswith('/'):
@@ -83,34 +115,140 @@ def get_tags(query, page=1, page_size=20):
     return response
 #endregion API
 
-#region Auto Utils
+#region Get Utils
+def get_automatic_type(type: str):
+    if type == 'Hypernetwork': return 'hypernet'
+    return type.lower()
+
+def get_automatic_name(type: str, filename: str, folder: str):
+    abspath = os.path.abspath(filename)
+    if abspath.startswith(folder):
+        fullname = abspath.replace(folder, '')
+    else:
+        fullname = os.path.basename(filename)
+
+    if fullname.startswith("\\") or fullname.startswith("/"):
+        fullname = fullname[1:]
+
+    if type == 'Checkpoint': return fullname
+    return os.path.splitext(fullname)[0]
+
+def has_preview(filename: str):
+    return os.path.isfile(os.path.splitext(filename)[0] + '.png')
+
+def get_resources_in_folder(type, folder, exts=[], exts_exclude=[]):
+    resources = []
+    os.makedirs(folder, exist_ok=True)
+
+    candidates = []
+    for ext in exts:
+        candidates += glob.glob(os.path.join(folder, '**/*.' + ext), recursive=True)
+    for ext in exts_exclude:
+        candidates = [x for x in candidates if not x.endswith(ext)]
+
+    folder = os.path.abspath(folder)
+    automatic_type = get_automatic_type(type)
+    for filename in sorted(candidates):
+        if os.path.isdir(filename):
+            continue
+
+        name = os.path.splitext(filename)[0]
+        automatic_name = get_automatic_name(type, filename, folder)
+        hash = hashes.sha256(filename, f"{automatic_type}/{automatic_name}")
+
+        resources.append({'type': type, 'name': name, 'hash': hash, 'path': filename, 'hasPreview': has_preview(filename) })
+
+    return resources
+
+resources = []
+def load_resource_list(types=['LORA', 'Hypernetwork', 'TextualInversion', 'Checkpoint']):
+    global resources
+
+    # If resources is empty and types is empty, load all types
+    # This is a helper to be able to get the resource list without
+    # having to worry about initialization. On subsequent calls, no work will be done
+    if len(resources) == 0 and len(types) == 0:
+        types = ['LORA', 'Hypernetwork', 'TextualInversion', 'Checkpoint']
+
+    if 'LORA' in types:
+        resources = [r for r in resources if r['type'] != 'LORA']
+        resources += get_resources_in_folder('LORA', shared.cmd_opts.lora_dir, ['pt', 'safetensors', 'ckpt'])
+    if 'Hypernetwork' in types:
+        resources = [r for r in resources if r['type'] != 'Hypernetwork']
+        resources += get_resources_in_folder('Hypernetwork', shared.cmd_opts.hypernetwork_dir, ['pt', 'safetensors', 'ckpt'])
+    if 'TextualInversion' in types:
+        resources = [r for r in resources if r['type'] != 'TextualInversion']
+        resources += get_resources_in_folder('TextualInversion', shared.cmd_opts.embeddings_dir, ['pt'])
+    if 'Checkpoint' in types:
+        resources = [r for r in resources if r['type'] != 'Checkpoint']
+        resources += get_resources_in_folder('Checkpoint', sd_models.model_path, ['safetensors', 'ckpt'], ['vae.safetensors', 'vae.ckpt'])
+
+    return resources
+
+def get_resource_by_hash(hash: str):
+    resources = load_resource_list([])
+
+    found = [resource for resource in resources if hash.lower() == resource['hash']]
+    if found:
+        return found[0]
+
+    return None
+
 def get_model_by_hash(hash: str):
     found = [info for info in sd_models.checkpoints_list.values() if hash == info.sha256 or hash == info.shorthash or hash == info.hash]
     if found:
         return found[0]
 
     return None
-#endregion Auto Utils
+
+#endregion Get Utils
+
+#region Removing
+def remove_resource(resource: ResourceRequest):
+    removed = None
+    target = get_resource_by_hash(resource['hash'])
+    if target is None or target['type'] != resource['type']: removed = False
+    elif os.path.exists(target['path']):
+        os.remove(target['path'])
+        removed = True
+
+    if removed == True:
+        log(f'Removed resource')
+        load_resource_list([resource['type']])
+        if resource['type'] == 'Checkpoint':
+            sd_models.list_models()
+        elif resource['type'] == 'Hypernetwork':
+            shared.reload_hypernetworks()
+        # elif resource['type'] == 'LORA':
+            # TODO: reload LORA
+    elif removed == None:
+        log(f'Resource not found')
+#endregion Removing
 
 #region Downloading
-def load_if_missing(path, url):
+def load_if_missing(path, url, on_progress=None):
     if os.path.exists(path): return True
     if url is None: return False
 
-    dir, file = os.path.split(path)
-    load_file_from_url(url, dir, True, file)
+    download_file(url, path, on_progress)
     return None
 
-async def load_resource(resource: ResourceRequest):
-    if resource.type == 'Checkpoint': await load_model(resource)
-    if resource.type == 'CheckpointConfig': await load_model_config(resource)
-    elif resource.type == 'Hypernetwork': await load_hypernetwork(resource)
-    elif resource.type == 'TextualInversion': await load_textual_inversion(resource)
-    elif resource.type == 'AestheticGradient': await load_aesthetic_gradient(resource)
-    elif resource.type == 'VAE': await load_vae(resource)
-    elif resource.type == 'LORA': await load_lora(resource)
+def load_resource(resource: ResourceRequest, on_progress=None):
+    resource['hash'] = resource['hash'].lower()
+    existing_resource = get_resource_by_hash(resource['hash'])
+    if existing_resource:
+        log(f'Already have resource: {resource["name"]}')
+        return
 
-async def fetch_model_by_hash(hash: str):
+    if resource['type'] == 'Checkpoint': load_model(resource, on_progress)
+    elif resource['type'] == 'CheckpointConfig': load_model_config(resource, on_progress)
+    elif resource['type'] == 'Hypernetwork': load_hypernetwork(resource, on_progress)
+    elif resource['type'] == 'TextualInversion': load_textual_inversion(resource, on_progress)
+    elif resource['type'] == 'LORA': load_lora(resource, on_progress)
+
+    load_resource_list([resource['type']])
+
+def fetch_model_by_hash(hash: str):
     model_version = get_model_version_by_hash(hash)
     if model_version is None:
         log(f'Could not find model version with hash {hash}')
@@ -123,147 +261,71 @@ async def fetch_model_by_hash(hash: str):
         hash=file['hashes']['SHA256'],
         url=file['downloadUrl']
     )
-    await load_resource(resource)
+    load_resource(resource)
 
-async def load_model_config(resource: ResourceRequest):
-    load_if_missing(os.path.join(models_path, 'stable-diffusion', resource.name), resource.url)
+def load_model_config(resource: ResourceRequest, on_progress=None):
+    load_if_missing(os.path.join(sd_models.model_path, resource['name']), resource['url'], on_progress)
 
-async def load_model(resource: ResourceRequest):
-    if shared.opts.data["sd_checkpoint_hash"] == resource.hash: return
-
-    model = get_model_by_hash(resource.hash)
+def load_model(resource: ResourceRequest, on_progress=None):
+    model = get_model_by_hash(resource['hash'])
     if model is not None:
         log('Found model in model list')
-    if model is None and resource.url is not None:
+    if model is None and resource['url'] is not None:
         log('Downloading model')
-        load_file_from_url(resource.url, os.path.join(models_path, 'stable-diffusion'), True, resource.name)
+        download_file(resource['url'], os.path.join(sd_models.model_path, resource['name']), on_progress)
         sd_models.list_models()
-        model = get_model_by_hash(resource.hash)
+        model = get_model_by_hash(resource['hash'])
+
+    return model
+
+def load_textual_inversion(resource: ResourceRequest, on_progress=None):
+    load_if_missing(os.path.join(shared.cmd_opts.embeddings_dir, resource['name']), resource['url'], on_progress)
+
+def load_lora(resource: ResourceRequest, on_progress=None):
+    isAvailable = load_if_missing(os.path.join(shared.cmd_opts.lora_dir, resource['name']), resource['url'], on_progress)
+    # TODO: reload lora list - not sure best way to import this
+    # if isAvailable is None:
+        # lora.list_available_loras()
+
+def load_vae(resource: ResourceRequest, on_progress=None):
+    # TODO: find by hash instead of name
+    if not resource['name'].endswith('.pt'): resource['name'] += '.pt'
+    full_path = os.path.join(models_path, 'VAE', resource['name'])
+
+    isAvailable = load_if_missing(full_path, resource['url'], on_progress)
+    if isAvailable is None:
+        sd_vae.refresh_vae_list()
+
+def load_hypernetwork(resource: ResourceRequest, on_progress=None):
+    full_path = os.path.join(shared.cmd_opts.hypernetwork_dir, resource['name']);
+    if not full_path.endswith('.pt'): full_path += '.pt'
+    isAvailable = load_if_missing(full_path, resource['url'], on_progress)
+    if isAvailable is None:
+        shared.reload_hypernetworks()
+
+#endregion Downloading
+
+#region Selecting Resources
+def select_model(resource: ResourceRequest):
+    if shared.opts.data["sd_checkpoint_hash"] == resource['hash']: return
+
+    model = load_model(resource)
 
     if model is not None:
         sd_models.load_model(model)
         shared.opts.save(shared.config_filename)
     else: log('Could not find model and no URL was provided')
 
-async def load_hypernetwork(resource: ResourceRequest):
-    # TODO: rig some way to work with hashes instead of names to avoid collisions
+def select_vae(resource: ResourceRequest):
+    # TODO: find by hash instead of name
+    if not resource['name'].endswith('.pt'): resource['name'] += '.pt'
+    full_path = os.path.join(models_path, 'VAE', resource['name'])
 
-    if shared.opts.sd_hypernetwork == resource.name:
-        log('Hypernetwork already loaded')
-        return
-
-    full_path = os.path.join(models_path, 'hypernetworks', resource.name);
-    if not full_path.endswith('.pt'): full_path += '.pt'
-    isAvailable = load_if_missing(full_path, resource.url)
-    if not isAvailable:
-        log('Could not find hypernetwork')
-        return
-
-    shared.opts.sd_hypernetwork = resource.name
-    shared.opts.save(shared.config_filename)
-    shared.reload_hypernetworks()
-
-async def load_textual_inversion(resource: ResourceRequest):
-    # TODO: rig some way to work with hashes instead of names to avoid collisions
-    load_if_missing(os.path.join('embeddings', resource.name), resource.url)
-
-async def load_aesthetic_gradient(resource: ResourceRequest):
-    # TODO: rig some way to work with hashes instead of names to avoid collisions
-    load_if_missing(os.path.join('extensions/stable-diffusion-webui-aesthetic-gradients','aesthetic_embeddings', resource.name), resource.url)
-
-async def load_vae(resource: ResourceRequest):
-    # TODO: rig some way to work with hashes instead of names to avoid collisions
-
-    if not resource.name.endswith('.pt'): resource.name += '.pt'
-    full_path = os.path.join(models_path, 'VAE', resource.name)
-
-    if sd_vae.loaded_vae_file is not None and sd_vae.get_filename(sd_vae.loaded_vae_file) == resource.name:
+    if sd_vae.loaded_vae_file is not None and sd_vae.get_filename(sd_vae.loaded_vae_file) == resource['name']:
         log('VAE already loaded')
         return
 
-    isAvailable = load_if_missing(full_path, resource.url)
-    if not isAvailable:
-        log('Could not find VAE')
-        return
-
-    sd_vae.refresh_vae_list()
-    sd_vae.load_vae(shared.sd_model, full_path)
-
-async def load_lora(resource: ResourceRequest):
-    isAvailable = load_if_missing(os.path.join('extensions/sd-webui-additional-networks/models/lora', resource.name), resource.url)
-
-    # TODO: Auto refresh LORA
-    # lora = import_module('extensions.sd-webui-additional-networks.scripts.additional_networks')
-    # if lora is None:
-    #     log('LORA extension not installed')
-    #     return
-    # if isAvailable is None: # isAvailable is None if the file was downloaded
-    #     lora.update_lora_models()
-
-    # TODO: Select LORA
-    # ¯\_(ツ)_/¯
-
-async def old_load_model(name, url=None):
-    if shared.opts.sd_model_checkpoint == name: return
-
-    model = sd_models.get_closet_checkpoint_match(name)
-    if model is None and url is not None:
-        log('Downloading model')
-        load_if_missing(os.path.join(models_path, 'stable-diffusion', name), url)
-        sd_models.list_models()
-        model = sd_models.get_closet_checkpoint_match(name)
-    elif shared.opts.sd_model_checkpoint == model.title:
-        log('Model already loaded')
-        return
-    else:
-        log('Found model in model list')
-
-    if model is not None:
-        sd_models.load_model(model)
-        shared.opts.sd_model_checkpoint = model.title
-        shared.opts.save(shared.config_filename)
-    else: log('Could not find model in model list')
-
-
-async def download_textual_inversion(name, url):
-    load_if_missing(os.path.join('embeddings', name), url)
-
-async def download_aesthetic_gradient(name, url):
-    load_if_missing(os.path.join('extensions/stable-diffusion-webui-aesthetic-gradients','aesthetic_embeddings', name), url)
-
-async def old_load_hypernetwork(name, url=None):
-    if shared.opts.sd_hypernetwork == name:
-        log('Hypernetwork already loaded')
-        return
-
-    full_path = os.path.join(models_path, 'hypernetworks', name);
-    if not full_path.endswith('.pt'): full_path += '.pt'
-    isAvailable = load_if_missing(full_path, url)
-    if not isAvailable:
-        log('Could not find hypernetwork')
-        return
-
-    shared.opts.sd_hypernetwork = name
-    shared.opts.save(shared.config_filename)
-    shared.reload_hypernetworks()
-
-def clear_hypernetwork():
-    if (shared.opts.sd_hypernetwork == 'None'): return
-
-    log('Clearing hypernetwork')
-    shared.opts.sd_hypernetwork = 'None'
-    shared.opts.save(shared.config_filename)
-    shared.reload_hypernetworks()
-
-async def load_vae(name, url=None):
-    if not name.endswith('.pt'): name += '.pt'
-    full_path = os.path.join(models_path, 'VAE', name)
-
-    if sd_vae.loaded_vae_file is not None and sd_vae.get_filename(sd_vae.loaded_vae_file) == name:
-        log('VAE already loaded')
-        return
-
-    isAvailable = load_if_missing(full_path, url)
+    isAvailable = load_if_missing(full_path, resource['url'])
     if not isAvailable:
         log('Could not find VAE')
         return
@@ -275,4 +337,28 @@ def clear_vae():
     log('Clearing VAE')
     sd_vae.clear_loaded_vae()
 
-#endregion Downloading
+def select_hypernetwork(resource: ResourceRequest):
+    # TODO: find by hash instead of name
+    if shared.opts.sd_hypernetwork == resource['name']:
+        log('Hypernetwork already loaded')
+        return
+
+    full_path = os.path.join(shared.cmd_opts.hypernetwork_dir, resource['name']);
+    if not full_path.endswith('.pt'): full_path += '.pt'
+    isAvailable = load_if_missing(full_path, resource['url'])
+    if not isAvailable:
+        log('Could not find hypernetwork')
+        return
+
+    shared.opts.sd_hypernetwork = resource['name']
+    shared.opts.save(shared.config_filename)
+    shared.reload_hypernetworks()
+
+def clear_hypernetwork():
+    if (shared.opts.sd_hypernetwork == 'None'): return
+
+    log('Clearing hypernetwork')
+    shared.opts.sd_hypernetwork = 'None'
+    shared.opts.save(shared.config_filename)
+    shared.reload_hypernetworks()
+#endregion

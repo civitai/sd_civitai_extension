@@ -1,0 +1,2 @@
+python-socketio[client]==5.7.2
+blake3==0.3.3
