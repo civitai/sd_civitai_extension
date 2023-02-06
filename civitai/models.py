@@ -11,8 +11,10 @@ class ResourceTypes(str, Enum):
     VAE = "VAE"
 
 class CommandTypes(str, Enum):
+    ActivitiesList = "activities:list"
     ResourcesList = "resources:list"
     ResourcesAdd = "resources:add"
+    ResourcesAddCancel = "resources:add:cancel"
     ResourcesRemove = "resources:remove"
 
 class ImageParams(BaseModel):
@@ -47,6 +49,9 @@ class Command(BaseModel):
     id: str = Field(default=None, title="ID", description="The ID of the command.")
     type: CommandTypes = Field(default=None, title="Type", description="The type of command to execute.")
 
+class CommandActivitiesList(Command):
+    type: CommandTypes = Field(default=CommandTypes.ActivitiesList, title="Type", description="The type of command to execute.")
+
 class CommandResourcesList(Command):
     type: CommandTypes = Field(default=CommandTypes.ResourcesList, title="Type", description="The type of command to execute.")
     types: list[ResourceTypes] = Field(default=[], title="Types", description="The types of resources to list.")
@@ -54,6 +59,14 @@ class CommandResourcesList(Command):
 class CommandResourcesAdd(Command):
     type: CommandTypes = Field(default=CommandTypes.ResourcesAdd, title="Type", description="The type of command to execute.")
     resources: list[ResourceRequest] = Field(default=[], title="Resources", description="The resources to add.")
+
+class ResourceCancelRequest(BaseModel):
+    type: ResourceTypes = Field(default=None, title="Type", description="The type of the resource to remove.")
+    hash: str = Field(default=None, title="Hash", description="The SHA256 hash of the resource to remove.")
+
+class CommandResourcesAddCancel(Command):
+    type: CommandTypes = Field(default=CommandTypes.ResourcesAddCancel, title="Type", description="The type of command to execute.")
+    resources: list[ResourceCancelRequest] = Field(default=[], title="Resources", description="The resources to cancel adding.")
 
 class ResourceRemoveRequest(BaseModel):
     type: ResourceTypes = Field(default=None, title="Type", description="The type of the resource to remove.")

@@ -5,7 +5,7 @@ import socketio
 import os
 
 import extensions.sd_civitai_extension.civitai.lib as civitai
-from extensions.sd_civitai_extension.civitai.models import Command, CommandResourcesAdd, CommandResourcesList, CommandResourcesRemove, ErrorPayload, JoinedPayload, UpgradeKeyPayload
+from extensions.sd_civitai_extension.civitai.models import Command, CommandActivitiesList, CommandResourcesAdd, CommandResourcesAddCancel, CommandResourcesList, CommandResourcesRemove, ErrorPayload, JoinedPayload, UpgradeKeyPayload
 
 from modules import shared, sd_models, script_callbacks, hashes
 
@@ -15,7 +15,11 @@ def on_resources_list(payload: CommandResourcesList):
     resources = civitai.load_resource_list(types)
     sio.emit('commandStatus', { 'type': payload['type'], 'resources': resources, 'status': 'success' })
 
-report_interval = 10
+def on_activities_list(payload: CommandActivitiesList):
+    sio.emit('commandStatus', { 'id': payload['id'], 'type': payload['type'], 'activities': civitai.activities, 'status': 'success' })
+
+report_interval = 1
+should_cancel_resources: list[str] = []
 def on_resources_add(payload: CommandResourcesAdd):
     resources = payload['resources']
     payload['status'] = 'processing'
@@ -27,9 +31,15 @@ def on_resources_add(payload: CommandResourcesAdd):
         if force or current_time - last_report > report_interval:
             sio.emit('commandStatus', { 'id': payload['id'], 'type': payload['type'], 'resources': resources, 'status': payload['status'] })
             last_report = current_time
+            civitai.add_activity(payload)
 
     def progress_for_resource(resource):
         def on_progress(current: int, total: int, start_time: float):
+            if resource['hash'] in should_cancel_resources:
+                should_cancel_resources.remove(resource['hash'])
+                resource['status'] = 'canceled'
+                return True
+
             current_time = time.time()
             elapsed_time = current_time - start_time
             speed = current / elapsed_time
@@ -50,9 +60,10 @@ def on_resources_add(payload: CommandResourcesAdd):
             resource['status'] = 'success'
         except Exception as e:
             civitai.log(e)
-            resource['status'] = 'error'
-            resource['error'] = 'Failed to download resource'
-            had_error = True
+            if resource['status'] != 'canceled':
+                resource['status'] = 'error'
+                resource['error'] = 'Failed to download resource'
+                had_error = True
         report_status(True)
 
 
@@ -61,6 +72,21 @@ def on_resources_add(payload: CommandResourcesAdd):
         payload['error'] = 'Failed to download some resources'
 
     report_status(True)
+
+def on_resources_add_cancel(payload: CommandResourcesAddCancel):
+    resources = payload['resources']
+    for resource in resources:
+        resource['hash'] = resource['hash'].lower()
+        existing_resource = civitai.get_resource_by_hash(resource['hash'])
+        if existing_resource is not None:
+            resource['status'] = 'error'
+            resource['error'] = 'Resource already fully downloaded'
+            continue
+
+        should_cancel_resources.append(resource['hash'])
+        resource['status'] = 'success'
+
+    sio.emit('commandStatus', { 'id': payload['id'], 'type': payload['type'], 'resources': resources, 'status': 'success' })
 
 def on_resources_remove(payload: CommandResourcesRemove):
     resources = payload['resources']
@@ -77,6 +103,7 @@ def on_resources_remove(payload: CommandResourcesRemove):
             had_error = True
 
     sio.emit('commandStatus', { 'id': payload['id'], 'type': payload['type'], 'resources': resources, 'status': 'success' if not had_error else 'error' })
+    civitai.add_activity(payload)
 #endregion
 
 #region SocketIO Events
@@ -96,8 +123,12 @@ def connect():
 def on_command(payload: Command):
     command = payload['type']
     civitai.log(f"command: {payload['type']}")
-    if command == 'resources:list': return on_resources_list(payload)
+    civitai.add_activity(payload)
+
+    if command == 'activities:list': return on_activities_list(payload)
+    elif command == 'resources:list': return on_resources_list(payload)
     elif command == 'resources:add': return on_resources_add(payload)
+    elif command == 'resources:add:cancel': return on_resources_add_cancel(payload)
     elif command == 'resources:remove': return on_resources_remove(payload)
 
 

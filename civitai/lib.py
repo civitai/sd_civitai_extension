@@ -9,7 +9,7 @@ import glob
 from tqdm import tqdm
 from modules import shared, sd_models, sd_vae, hashes
 from modules.paths import models_path
-from extensions.sd_civitai_extension.civitai.models import ResourceRequest
+from extensions.sd_civitai_extension.civitai.models import Command, ResourceRequest
 
 #region shared variables
 try:
@@ -20,6 +20,7 @@ except:
 connected = False
 user_agent = 'CivitaiLink:Automatic1111'
 download_chunk_size = 8192
+cache_key = 'civitai'
 #endregion
 
 #region Utils
@@ -49,7 +50,9 @@ def download_file(url, dest, on_progress=None):
                 pos = f.write(data)
                 bar.update(pos)
                 if on_progress is not None:
-                    on_progress(current, total, start_time)
+                    should_stop = on_progress(current, total, start_time)
+                    if should_stop == True:
+                        raise Exception('Download cancelled')
         f.close()
         shutil.move(f.name, dest)
     finally:
@@ -152,7 +155,7 @@ def get_resources_in_folder(type, folder, exts=[], exts_exclude=[]):
         if os.path.isdir(filename):
             continue
 
-        name = os.path.splitext(filename)[0]
+        name = os.path.splitext(os.path.basename(filename))[0]
         automatic_name = get_automatic_name(type, filename, folder)
         hash = hashes.sha256(filename, f"{automatic_type}/{automatic_name}")
 
@@ -361,4 +364,21 @@ def clear_hypernetwork():
     shared.opts.sd_hypernetwork = 'None'
     shared.opts.save(shared.config_filename)
     shared.reload_hypernetworks()
+#endregion
+
+#region Activities
+activities = []
+activity_history_length = 10
+ignore_activity_types = ['resources:list','activities:list', 'resources:add:cancel']
+def add_activity(activity: Command):
+    global activities
+
+    if activity['type'] in ignore_activity_types: return
+
+    existing_activity_index = [i for i, x in enumerate(activities) if x['id'] == activity['id']]
+    if len(existing_activity_index) > 0: activities[existing_activity_index[0]] = activity
+    else: activities.insert(0, activity)
+
+    if len(activities) > activity_history_length:
+        activities.pop()
 #endregion
