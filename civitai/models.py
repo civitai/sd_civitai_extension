@@ -43,7 +43,6 @@ class ResourceRequest(BaseModel):
     hash: str = Field(default=None, title="Hash", description="The SHA256 hash of the resource to download.")
     url: str = Field(default=None, title="URL", description="The URL of the resource to download.", required=False)
     previewImage: str = Field(default=None, title="Preview Image", description="The URL of the preview image.", required=False)
-    addons: list[str] = Field(default=[], title="Addons", description="The addons to download with the resource.", required=False)
 
 class Command(BaseModel):
     id: str = Field(default=None, title="ID", description="The ID of the command.")
