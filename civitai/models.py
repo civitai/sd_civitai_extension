@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import List
 from pydantic import BaseModel, Field
 
 class ResourceTypes(str, Enum):
@@ -53,7 +54,7 @@ class CommandActivitiesList(Command):
 
 class CommandResourcesList(Command):
     type: CommandTypes = Field(default=CommandTypes.ResourcesList, title="Type", description="The type of command to execute.")
-    types: list[ResourceTypes] = Field(default=[], title="Types", description="The types of resources to list.")
+    types: List[ResourceTypes] = Field(default=[], title="Types", description="The types of resources to list.")
 
 class CommandResourcesAdd(Command):
     type: CommandTypes = Field(default=CommandTypes.ResourcesAdd, title="Type", description="The type of command to execute.")

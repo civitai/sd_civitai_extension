@@ -1,6 +1,7 @@
 # main ui
 from datetime import datetime, timezone
 import time
+from typing import List
 import gradio as gr
 import socketio
 import os
@@ -29,8 +30,8 @@ def on_activities_clear(payload: CommandActivitiesList):
     command_response(payload)
 
 report_interval = 1
-processing_activites: list[str] = []
-should_cancel_activity: list[str] = []
+processing_activites: List[str] = []
+should_cancel_activity: List[str] = []
 def on_resources_add(payload: CommandResourcesAdd):
     resource = payload['resource']
     payload['status'] = 'processing'
