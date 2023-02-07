@@ -12,9 +12,9 @@ class ResourceTypes(str, Enum):
 
 class CommandTypes(str, Enum):
     ActivitiesList = "activities:list"
+    ActivitiesCancel = "activities:cancel"
     ResourcesList = "resources:list"
     ResourcesAdd = "resources:add"
-    ResourcesAddCancel = "resources:add:cancel"
     ResourcesRemove = "resources:remove"
 
 class ImageParams(BaseModel):
@@ -58,15 +58,14 @@ class CommandResourcesList(Command):
 
 class CommandResourcesAdd(Command):
     type: CommandTypes = Field(default=CommandTypes.ResourcesAdd, title="Type", description="The type of command to execute.")
-    resources: list[ResourceRequest] = Field(default=[], title="Resources", description="The resources to add.")
+    resource: ResourceRequest = Field(default=[], title="Resource", description="The resources to add.")
 
 class ResourceCancelRequest(BaseModel):
     type: ResourceTypes = Field(default=None, title="Type", description="The type of the resource to remove.")
     hash: str = Field(default=None, title="Hash", description="The SHA256 hash of the resource to remove.")
 
-class CommandResourcesAddCancel(Command):
-    type: CommandTypes = Field(default=CommandTypes.ResourcesAddCancel, title="Type", description="The type of command to execute.")
-    resources: list[ResourceCancelRequest] = Field(default=[], title="Resources", description="The resources to cancel adding.")
+class CommandActivitiesCancel(Command):
+    type: CommandTypes = Field(default=CommandTypes.ActivitiesCancel, title="Type", description="The type of command to execute.")
 
 class ResourceRemoveRequest(BaseModel):
     type: ResourceTypes = Field(default=None, title="Type", description="The type of the resource to remove.")
@@ -74,7 +73,7 @@ class ResourceRemoveRequest(BaseModel):
 
 class CommandResourcesRemove(Command):
     type: CommandTypes = Field(default=CommandTypes.ResourcesRemove, title="Type", description="The type of command to execute.")
-    resources: list[ResourceRemoveRequest] = Field(default=[], title="Resources", description="The resources to remove.")
+    resource: ResourceRemoveRequest = Field(default=[], title="Resource", description="The resources to remove.")
 
 class UpgradeKeyPayload(BaseModel):
     key: str = Field(default=None, title="Key", description="The upgraded key.")

@@ -243,6 +243,8 @@ def load_resource(resource: ResourceRequest, on_progress=None):
         log(f'Already have resource: {resource["name"]}')
         return
 
+    resources.append({'type': resource['type'], 'name': resource['name'], 'hash': resource['hash'], 'downloading': True })
+
     if resource['type'] == 'Checkpoint': load_model(resource, on_progress)
     elif resource['type'] == 'CheckpointConfig': load_model_config(resource, on_progress)
     elif resource['type'] == 'Hypernetwork': load_hypernetwork(resource, on_progress)
@@ -369,7 +371,7 @@ def clear_hypernetwork():
 #region Activities
 activities = []
 activity_history_length = 10
-ignore_activity_types = ['resources:list','activities:list', 'resources:add:cancel']
+ignore_activity_types = ['resources:list','activities:list','activities:clear', 'activities:cancel']
 def add_activity(activity: Command):
     global activities
 
