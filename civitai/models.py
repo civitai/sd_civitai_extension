@@ -45,6 +45,10 @@ class ResourceRequest(BaseModel):
     url: str = Field(default=None, title="URL", description="The URL of the resource to download.", required=False)
     previewImage: str = Field(default=None, title="Preview Image", description="The URL of the preview image.", required=False)
 
+class RoomPresence(BaseModel):
+    client: int = Field(default=None, title="Clients", description="The number of clients in the room")
+    sd: int = Field(default=None, title="Stable Diffusion Clients", description="The number of Stable Diffusion Clients in the room")
+
 class Command(BaseModel):
     id: str = Field(default=None, title="ID", description="The ID of the command.")
     type: CommandTypes = Field(default=None, title="Type", description="The type of command to execute.")

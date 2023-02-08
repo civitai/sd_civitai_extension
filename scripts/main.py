@@ -7,7 +7,7 @@ import socketio
 import os
 
 import extensions.sd_civitai_extension.civitai.lib as civitai
-from extensions.sd_civitai_extension.civitai.models import Command, CommandActivitiesList, CommandResourcesAdd, CommandActivitiesCancel, CommandResourcesList, CommandResourcesRemove, ErrorPayload, JoinedPayload, UpgradeKeyPayload
+from extensions.sd_civitai_extension.civitai.models import Command, CommandActivitiesList, CommandResourcesAdd, CommandActivitiesCancel, CommandResourcesList, CommandResourcesRemove, ErrorPayload, JoinedPayload, RoomPresence, UpgradeKeyPayload
 
 from modules import shared, sd_models, script_callbacks, hashes
 
@@ -105,11 +105,26 @@ except:
     socketio_url = 'https://link.civitai.com'
 
 sio = socketio.Client()
+should_reconnect = False
 
 @sio.event
 def connect():
-    civitai.log('Connected to Civitai Link')
+    global should_reconnect
+
+    civitai.log('Connected to Civitai Link Server')
     sio.emit('iam', {"type": "sd"})
+    if should_reconnect:
+        key = shared.opts.data.get("civitai_link_key", None)
+        if key is None: return
+        join_room(key)
+        should_reconnect = False
+
+@sio.event
+def disconnect():
+    global should_reconnect
+
+    civitai.log('Disconnected from Civitai Link Server')
+    should_reconnect = True
 
 @sio.on('command')
 def on_command(payload: Command):
@@ -125,10 +140,10 @@ def on_command(payload: Command):
     elif command == 'resources:remove': return on_resources_remove(payload)
 
 
-@sio.on('linkStatus')
-def on_link_status(payload: bool):
-    civitai.connected = payload
-    civitai.log("Civitai Link ready")
+@sio.on('roomPresence')
+def on_link_status(payload: RoomPresence):
+    civitai.log(f"Presence update: SD: {payload['sd']}, Clients: {payload['client']}")
+    civitai.connected = payload['sd'] > 0 and payload['client'] > 0
 
 @sio.on('upgradeKey')
 def on_upgrade_key(payload: UpgradeKeyPayload):
@@ -138,11 +153,6 @@ def on_upgrade_key(payload: UpgradeKeyPayload):
 @sio.on('error')
 def on_error(payload: ErrorPayload):
     civitai.log(f"Error: {payload['msg']}")
-
-@sio.on('joined')
-def on_joined(payload: JoinedPayload):
-    if payload['type'] != 'client': return
-    civitai.log("Client joined")
 
 def command_response(payload, history=False):
     payload['updatedAt'] = datetime.now(timezone.utc).isoformat()

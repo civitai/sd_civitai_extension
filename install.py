@@ -1,21 +1,27 @@
-import filecmp
-import importlib.util
+import subprocess
 import os
-import shutil
 import sys
-import sysconfig
 
 import git
 
 from launch import run
 
-if sys.version_info < (3, 8):
-    import importlib_metadata
-else:
-    import importlib.metadata as importlib_metadata
-
 req_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "requirements.txt")
 
+def is_package_installed(package_name, version):
+    # strip [] from package name
+    package_name = package_name.split("[")[0]
+    try:
+        result = subprocess.run(['pip', 'show', package_name], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except FileNotFoundError:
+        return False
+    if result.returncode == 0:
+        for line in result.stdout.decode('utf-8').splitlines():
+            if line.startswith('Version: '):
+                installed_version = line.split(' ')[-1]
+                if installed_version == version:
+                    return True
+    return False
 
 def check_versions():
     global req_file
@@ -27,29 +33,11 @@ def check_versions():
         if len(splits) == 2:
             key = splits[0]
             reqs_dict[key] = splits[1].replace("\n", "").strip()
-    # print(f"Reqs dict: {reqs_dict}")
-    checks = ["socketio[client]","blake3"]
-    for check in checks:
-        check_ver = "N/A"
-        status = "[ ]"
-        try:
-            check_available = importlib.util.find_spec(check) is not None
-            if check_available:
-                check_ver = importlib_metadata.version(check)
-                if check in reqs_dict:
-                    req_version = reqs_dict[check]
-                    if str(check_ver) == str(req_version):
-                        status = "[+]"
-                    else:
-                        status = "[!]"
-        except importlib_metadata.PackageNotFoundError:
-            check_available = False
-        if not check_available:
-            status = "[!]"
-            print(f"{status} {check} NOT installed.")
-        else:
-            print(f"{status} {check} version {check_ver} installed.")
-
+    # Loop through reqs and check if installed
+    for req in reqs_dict:
+        available = is_package_installed(req, reqs_dict[req])
+        if available: print(f"[+] {req} version {reqs_dict[req]} installed.")
+        else : print(f"[!] {req} version {reqs_dict[req]} NOT installed.")
 
 base_dir = os.path.dirname(os.path.realpath(__file__))
 revision = ""
