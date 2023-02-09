@@ -191,7 +191,7 @@ def load_resource_list(types=['LORA', 'Hypernetwork', 'TextualInversion', 'Check
 def get_resource_by_hash(hash: str):
     resources = load_resource_list([])
 
-    found = [resource for resource in resources if hash.lower() == resource['hash']]
+    found = [resource for resource in resources if hash.lower() == resource['hash'] and resource['downloading'] != True]
     if found:
         return found[0]
 

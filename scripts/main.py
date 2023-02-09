@@ -12,6 +12,9 @@ from extensions.sd_civitai_extension.civitai.models import Command, CommandActiv
 from modules import shared, sd_models, script_callbacks, hashes
 
 #region Civitai Link Command Handlers
+def send_resources(types: List[str] = []):
+    command_response({'type': 'resources:list', 'resources': civitai.load_resource_list(types)})
+
 def on_resources_list(payload: CommandResourcesList):
     types = payload['types'] if 'types' in payload else []
     payload['resources'] = civitai.load_resource_list(types)
@@ -47,6 +50,9 @@ def on_resources_add(payload: CommandResourcesAdd):
     def on_progress(current: int, total: int, start_time: float):
         if payload['id'] in should_cancel_activity:
             should_cancel_activity.remove(payload['id'])
+            dl_resources = [r for r in civitai.resources if r['hash'] == resource['hash'] and r['downloading'] == True]
+            if len(dl_resources) > 0:
+                civitai.resources.remove(dl_resources[0])
             payload['status'] = 'canceled'
             return True
 
@@ -74,6 +80,7 @@ def on_resources_add(payload: CommandResourcesAdd):
 
     processing_activites.remove(payload['id'])
     report_status(True)
+    send_resources()
 
 def on_activities_cancel(payload: CommandActivitiesCancel):
     activity_id = payload['activityId']
@@ -120,6 +127,10 @@ def connect():
         should_reconnect = False
 
 @sio.event
+def connect_error(data):
+    civitai.log('Civitai Link Server Connection Error')
+
+@sio.event
 def disconnect():
     global should_reconnect
 
@@ -139,9 +150,13 @@ def on_command(payload: Command):
     elif command == 'resources:add': return on_resources_add(payload)
     elif command == 'resources:remove': return on_resources_remove(payload)
 
+@sio.on('kicked')
+def on_kicked():
+    civitai.log(f"Kicked from instance. Clearing key.")
+    shared.opts.data['civitai_link_key'] = None
 
 @sio.on('roomPresence')
-def on_link_status(payload: RoomPresence):
+def on_room_presence(payload: RoomPresence):
     civitai.log(f"Presence update: SD: {payload['sd']}, Clients: {payload['client']}")
     civitai.connected = payload['sd'] > 0 and payload['client'] > 0
 
