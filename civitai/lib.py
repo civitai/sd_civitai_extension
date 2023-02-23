@@ -3,6 +3,7 @@ import os
 import shutil
 import tempfile
 import time
+from typing import List
 import requests
 import glob
 
@@ -67,13 +68,19 @@ def req(endpoint, method='GET', data=None, params=None, headers=None):
     if headers is None:
         headers = {}
     headers['User-Agent'] = user_agent
+    api_key = shared.opts.data.get("civitai_api_key", None)
+    if api_key is not None:
+        headers['Authorization'] = f'Bearer {api_key}'
     if data is not None:
+        headers['Content-Type'] = 'application/json'
         data = json.dumps(data)
     if not endpoint.startswith('/'):
         endpoint = '/' + endpoint
     if params is None:
         params = {}
     response = requests.request(method, base_url+endpoint, data=data, params=params, headers=headers)
+    if response.status_code != 200:
+        raise Exception(f'Error: {response.status_code} {response.text}')
     return response.json()
 
 def get_models(query, creator, tag, type, page=1, page_size=20, sort='Most Downloaded', period='AllTime'):
@@ -88,6 +95,10 @@ def get_models(query, creator, tag, type, page=1, page_size=20, sort='Most Downl
         'page': page,
         'pageSize': page_size,
     })
+    return response
+
+def get_all_by_hash(hashes: List[str]):
+    response = req(f"/model-versions/by-hash", method='POST', data=hashes)
     return response
 
 def get_model_version(id):
@@ -137,7 +148,7 @@ def get_automatic_name(type: str, filename: str, folder: str):
     return os.path.splitext(fullname)[0]
 
 def has_preview(filename: str):
-    return os.path.isfile(os.path.splitext(filename)[0] + '.png')
+    return os.path.isfile(os.path.splitext(filename)[0] + '.preview.png')
 
 def get_resources_in_folder(type, folder, exts=[], exts_exclude=[]):
     resources = []
@@ -191,7 +202,7 @@ def load_resource_list(types=['LORA', 'Hypernetwork', 'TextualInversion', 'Check
 def get_resource_by_hash(hash: str):
     resources = load_resource_list([])
 
-    found = [resource for resource in resources if hash.lower() == resource['hash'] and resource['downloading'] != True]
+    found = [resource for resource in resources if hash.lower() == resource['hash'] and ('downloading' not in resource or resource['downloading'] != True)]
     if found:
         return found[0]
 
@@ -367,6 +378,19 @@ def clear_hypernetwork():
     shared.opts.save(shared.config_filename)
     shared.reload_hypernetworks()
 #endregion
+
+#region Resource Management
+def update_resource_preview(hash: str, preview_url: str):
+    resources = load_resource_list([])
+    matches = [resource for resource in resources if hash.lower() == resource['hash']]
+    if len(matches) == 0: return
+
+    for resource in matches:
+        # download image and save to resource['path'] - ext + '.preview.png'
+        preview_path = os.path.splitext(resource['path'])[0] + '.preview.png'
+        download_file(preview_url, preview_path)
+
+#endregion Selecting Resources
 
 #region Activities
 activities = []
