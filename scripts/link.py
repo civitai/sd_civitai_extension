@@ -197,20 +197,4 @@ def on_civitai_link_key_changed():
     join_room(key)
 #endregion
 
-def on_ui_settings():
-    section = ('civitai_link', "Civitai Link")
-    shared.opts.add_option("civitai_link_key", shared.OptionInfo("", "Your Civitai Link Key", section=section, onchange=on_civitai_link_key_changed))
-
-
-# Automatically pull model with corresponding hash from Civitai
-def on_infotext_pasted(infotext, params):
-    if ("Model hash" not in params or shared.opts.disable_weights_auto_swap): return
-
-    model_hash = params["Model hash"]
-    model = civitai.get_model_by_hash(model_hash)
-    if (model is None):
-        civitai.fetch_model_by_hash(model_hash)
-
-script_callbacks.on_infotext_pasted(on_infotext_pasted)
-script_callbacks.on_ui_settings(on_ui_settings)
-script_callbacks.on_app_started(connect_to_civitai)
+# script_callbacks.on_app_started(connect_to_civitai)
