@@ -1,15 +1,15 @@
 # Civitai Extension for Automatic 1111 Stable Diffusion Web UI
 
-All the models right inside the UI you use to generate.
+Bringing together the power of Civitai and Automatic 1111
 
 **⚠️ This is a work in progress and not something you can use yet.**
 
 ## Features
-- [ ] Explore and download models, textual inversion, hypernetworks, and aesthetic gradients from the SD Web UI
-- [ ] Post reviews
-- [ ] Post trained Dreambooth models
-- [ ] Post trained Textual Inversions
-- [ ] Post trained Hypernetworks
+- [x] Automatically download preview images for all models, LORAs, hypernetworks, and embeds
+- [x] Automatically download a model based on the model hash upon applying pasted generation params
+- [x] Resources in Metadata: Include the SHA256 hash of all resources used in an image to be able to automatically link to corresponding resources on Civitai
+- [x] Flexible Resource Naming in Metadata: Hashify the names of resources in prompts to avoid issues with resource renaming and make prompts more portable
+- [ ] Civitai Link: Optional websocket connection to be able to add/remove resources and more in your SD instance while browsing Civitai or other Civitai Link enabled sites.
 
 ## Here to help?
 
