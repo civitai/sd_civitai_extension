@@ -4,9 +4,12 @@ import threading
 
 import extensions.sd_civitai_extension.civitai.lib as civitai
 
-from modules import script_callbacks
+from modules import script_callbacks, shared
 
 def load_previews():
+    download_missing_previews = shared.opts.data.get('civitai_download_previews', True)
+    if not download_missing_previews: return
+
     civitai.log(f"Check resources for missing preview images")
     resources = civitai.load_resource_list()
 
@@ -17,9 +20,13 @@ def load_previews():
 
     # split hashes into batches of 100 and fetch into results
     results = []
-    for i in range(0, len(hashes), 100):
-        batch = hashes[i:i + 100]
-        results.extend(civitai.get_all_by_hash(batch))
+    try:
+        for i in range(0, len(hashes), 100):
+            batch = hashes[i:i + 100]
+            results.extend(civitai.get_all_by_hash(batch))
+    except:
+        civitai.log("Failed to fetch preview images from Civitai")
+        return
 
     if len(results) == 0:
         civitai.log("No preview images found on Civitai")

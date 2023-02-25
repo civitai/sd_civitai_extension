@@ -47,7 +47,13 @@ def on_resources_add(payload: CommandResourcesAdd):
             command_response(payload, history=True)
             last_report = current_time
 
+    notified_of_download = False
     def on_progress(current: int, total: int, start_time: float):
+        nonlocal notified_of_download
+        if not notified_of_download:
+            send_resources()
+            notified_of_download = True
+
         if payload['id'] in should_cancel_activity:
             should_cancel_activity.remove(payload['id'])
             dl_resources = [r for r in civitai.resources if r['hash'] == resource['hash'] and r['downloading'] == True]
@@ -103,6 +109,7 @@ def on_resources_remove(payload: CommandResourcesRemove):
         payload['error'] = 'Failed to remove resource'
 
     command_response(payload, history=True)
+    send_resources()
 #endregion
 
 #region SocketIO Events
