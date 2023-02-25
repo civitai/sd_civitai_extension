@@ -175,14 +175,14 @@ def get_resources_in_folder(type, folder, exts=[], exts_exclude=[]):
     return resources
 
 resources = []
-def load_resource_list(types=['LORA', 'Hypernetwork', 'TextualInversion', 'Checkpoint']):
+def load_resource_list(types=['LORA', 'Hypernetwork', 'TextualInversion', 'Checkpoint', 'VAE']):
     global resources
 
     # If resources is empty and types is empty, load all types
     # This is a helper to be able to get the resource list without
     # having to worry about initialization. On subsequent calls, no work will be done
     if len(resources) == 0 and len(types) == 0:
-        types = ['LORA', 'Hypernetwork', 'TextualInversion', 'Checkpoint']
+        types = ['LORA', 'Hypernetwork', 'TextualInversion', 'Checkpoint', 'VAE']
 
     if 'LORA' in types:
         resources = [r for r in resources if r['type'] != 'LORA']
@@ -196,6 +196,10 @@ def load_resource_list(types=['LORA', 'Hypernetwork', 'TextualInversion', 'Check
     if 'Checkpoint' in types:
         resources = [r for r in resources if r['type'] != 'Checkpoint']
         resources += get_resources_in_folder('Checkpoint', sd_models.model_path, ['safetensors', 'ckpt'], ['vae.safetensors', 'vae.ckpt'])
+    if 'VAE' in types:
+        resources = [r for r in resources if r['type'] != 'VAE']
+        resources += get_resources_in_folder('VAE', sd_models.model_path, ['vae.pt', 'vae.safetensors', 'vae.ckpt'])
+        resources += get_resources_in_folder('VAE', sd_vae.vae_path, ['pt', 'safetensors', 'ckpt'])
 
     return resources
 
