@@ -6,12 +6,14 @@ import extensions.sd_civitai_extension.civitai.lib as civitai
 
 from modules import script_callbacks, shared
 
+previewable_types = ['LORA', 'Hypernetwork', 'TextualInversion', 'Checkpoint']
 def load_previews():
     download_missing_previews = shared.opts.data.get('civitai_download_previews', True)
     if not download_missing_previews: return
 
     civitai.log(f"Check resources for missing preview images")
     resources = civitai.load_resource_list()
+    resources = [r for r in resources if r['type'] in previewable_types]
 
     # get all resources that are missing previews
     missing_previews = [r for r in resources if r['hasPreview'] is False]
