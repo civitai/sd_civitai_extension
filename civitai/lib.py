@@ -48,7 +48,9 @@ def download_file(url, dest, on_progress=None):
         with tqdm(total=total, unit='B', unit_scale=True, unit_divisor=1024) as bar:
             for data in response.iter_content(chunk_size=download_chunk_size):
                 current += len(data)
-                pos = f.write(data)
+                try:
+                    pos = f.write(data)
+
                 bar.update(pos)
                 if on_progress is not None:
                     should_stop = on_progress(current, total, start_time)
@@ -56,6 +58,9 @@ def download_file(url, dest, on_progress=None):
                         raise Exception('Download cancelled')
         f.close()
         shutil.move(f.name, dest)
+    except OSError as e:
+       print(f"Could not write the preview file to {dst_dir}")
+       print(e)
     finally:
         f.close()
         if os.path.exists(f.name):
