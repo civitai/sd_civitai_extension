@@ -11,20 +11,30 @@ Bringing together the power of Civitai and Automatic 1111
 - [x] Flexible Resource Naming in Metadata: Hashify the names of resources in prompts to avoid issues with resource renaming and make prompts more portable
 - [ ] Civitai Link: Optional websocket connection to be able to add/remove resources and more in your SD instance while browsing Civitai or other Civitai Link enabled sites.
 
-## Usage
+## Installation
 
-Download the repo using any method (zip download or cloning)
-```
+### Through the Extensions UI (Recommended)
+1. Open the Extensions Tab in Automatic1111 SD Web UI
+2. In the Extension Tab Open the "Instal from URL" tab
+3. Paste `https://github.com/civitai/sd_civitai_extension.git` into the URL input
+4. Press install and wait for it to complete
+5. **Restart Automatic1111** (Reloading the UI will not install the necessary requirements)
+
+### Manually
+1. Download the repo using any method (zip download or cloning)
+```sh
 git clone https://github.com/civitai/sd_civitai_extension.git
 ```
-After downloading the repo, open a command prompt in that location
-```
+
+2. After downloading the repo, open a command prompt in that location
+```sh
 cd C:\path\to\sd_civitai_extension
 ```
-Then run the included install.py script
-```
+
+3. Then run the included install.py script
+```sh
 py install.py
-      OR
+# OR
 python install.py
 ```
 
