@@ -56,6 +56,9 @@ def download_file(url, dest, on_progress=None):
                         raise Exception('Download cancelled')
         f.close()
         shutil.move(f.name, dest)
+    except OSError as e:
+       print(f"Could not write the preview file to {dst_dir}")
+       print(e)
     finally:
         f.close()
         if os.path.exists(f.name):
