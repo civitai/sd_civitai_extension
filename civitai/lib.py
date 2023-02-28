@@ -48,9 +48,7 @@ def download_file(url, dest, on_progress=None):
         with tqdm(total=total, unit='B', unit_scale=True, unit_divisor=1024) as bar:
             for data in response.iter_content(chunk_size=download_chunk_size):
                 current += len(data)
-                try:
-                    pos = f.write(data)
-
+                pos = f.write(data)
                 bar.update(pos)
                 if on_progress is not None:
                     should_stop = on_progress(current, total, start_time)
