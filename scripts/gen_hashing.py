@@ -42,7 +42,7 @@ def add_resource_hashes(params):
     # Check for embeddings in prompt
     embeddings = [r for r in resources if r['type'] == 'TextualInversion']
     for embedding in embeddings:
-        embedding_pattern = re.compile(r'(?<![^\s:(|\[\]])' + re.escape(embedding['name']) + r'(?![^\s:)|\[\]])', re.MULTILINE | re.IGNORECASE)
+        embedding_pattern = re.compile(r'(?<![^\s:(|\[\]])' + re.escape(embedding['name']) + r'(?![^\s:)|\[\]\,])', re.MULTILINE | re.IGNORECASE)
 
         match_prompt = embedding_pattern.search(prompt)
         match_negative = embedding_pattern.search(negative_prompt)
