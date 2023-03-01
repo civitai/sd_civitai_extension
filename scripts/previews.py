@@ -10,6 +10,7 @@ previewable_types = ['LORA', 'Hypernetwork', 'TextualInversion', 'Checkpoint']
 def load_previews():
     download_missing_previews = shared.opts.data.get('civitai_download_previews', True)
     if not download_missing_previews: return
+    nsfw_previews = shared.opts.data.get('civitai_nsfw_previews', True)
 
     civitai.log(f"Check resources for missing preview images")
     resources = civitai.load_resource_list()
@@ -44,7 +45,10 @@ def load_previews():
         for file in r['files']:
             hash = file['hashes']['SHA256']
             if hash.lower() not in hashes: continue
-            image_url = r['images'][0]['url']
+            images = r['images']
+            if (nsfw_previews is False): images = [i for i in images if i['nsfw'] is False]
+            if (len(images) == 0): continue
+            image_url = images[0]['url']
             civitai.update_resource_preview(hash, image_url)
             updated += 1
 
