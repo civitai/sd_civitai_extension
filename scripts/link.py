@@ -33,7 +33,7 @@ def on_activities_clear(payload: CommandActivitiesList):
     command_response(payload)
 
 report_interval = 1
-processing_activites: List[str] = []
+processing_activities: List[str] = []
 should_cancel_activity: List[str] = []
 def on_resources_add(payload: CommandResourcesAdd):
     resource = payload['resource']
@@ -74,7 +74,7 @@ def on_resources_add(payload: CommandResourcesAdd):
         report_status()
 
     try:
-        processing_activites.append(payload['id'])
+        processing_activities.append(payload['id'])
         civitai.load_resource(resource, on_progress)
         if payload['status'] != 'canceled':
             payload['status'] = 'success'
@@ -84,13 +84,13 @@ def on_resources_add(payload: CommandResourcesAdd):
             payload['status'] = 'error'
             payload['error'] = 'Failed to download resource'
 
-    processing_activites.remove(payload['id'])
+    processing_activities.remove(payload['id'])
     report_status(True)
     send_resources()
 
 def on_activities_cancel(payload: CommandActivitiesCancel):
     activity_id = payload['activityId']
-    if activity_id not in processing_activites:
+    if activity_id not in processing_activities:
         payload['status'] = 'error'
         payload['error'] = 'Activity not found or already completed'
     else:
