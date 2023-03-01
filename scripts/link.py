@@ -11,6 +11,12 @@ from extensions.sd_civitai_extension.civitai.models import Command, CommandActiv
 
 from modules import shared, sd_models, script_callbacks, hashes
 
+#region Civitai Link Utils
+def log(message: str):
+    if not shared.opts.data.get('civitai_link_logging', True): return
+    print(f'Civitai Link: {message}')
+#endregion
+
 #region Civitai Link Command Handlers
 def send_resources(types: List[str] = []):
     command_response({'type': 'resources:list', 'resources': civitai.load_resource_list(types)})
@@ -79,7 +85,7 @@ def on_resources_add(payload: CommandResourcesAdd):
         if payload['status'] != 'canceled':
             payload['status'] = 'success'
     except Exception as e:
-        civitai.log(e)
+        log(e)
         if payload['status'] != 'canceled':
             payload['status'] = 'error'
             payload['error'] = 'Failed to download resource'
@@ -104,7 +110,7 @@ def on_resources_remove(payload: CommandResourcesRemove):
         civitai.remove_resource(payload['resource'])
         payload['status'] = 'success'
     except Exception as e:
-        civitai.log(e)
+        log(e)
         payload['status'] = 'error'
         payload['error'] = 'Failed to remove resource'
 
@@ -125,7 +131,7 @@ should_reconnect = False
 def connect():
     global should_reconnect
 
-    civitai.log('Connected to Civitai Link Server')
+    log('Connected to Civitai Link Server')
     sio.emit('iam', {"type": "sd"})
     if should_reconnect:
         key = shared.opts.data.get("civitai_link_key", None)
@@ -135,19 +141,19 @@ def connect():
 
 @sio.event
 def connect_error(data):
-    civitai.log('Civitai Link Server Connection Error')
+    log('Error connecting to Civitai Link Server')
 
 @sio.event
 def disconnect():
     global should_reconnect
 
-    civitai.log('Disconnected from Civitai Link Server')
+    log('Disconnected from Civitai Link Server')
     should_reconnect = True
 
 @sio.on('command')
 def on_command(payload: Command):
     command = payload['type']
-    civitai.log(f"command: {payload['type']}")
+    log(f"Incoming Command: {payload['type']}")
     civitai.add_activity(payload)
 
     if command == 'activities:list': return on_activities_list(payload)
@@ -159,22 +165,26 @@ def on_command(payload: Command):
 
 @sio.on('kicked')
 def on_kicked():
-    civitai.log(f"Kicked from instance. Clearing key.")
+    log(f"Kicked from instance. Clearing key.")
     shared.opts.data['civitai_link_key'] = None
 
 @sio.on('roomPresence')
 def on_room_presence(payload: RoomPresence):
-    civitai.log(f"Presence update: SD: {payload['sd']}, Clients: {payload['client']}")
-    civitai.connected = payload['sd'] > 0 and payload['client'] > 0
+    log(f"Presence update: SD: {payload['sd']}, Clients: {payload['client']}")
+    connected = payload['sd'] > 0 and payload['client'] > 0
+    if civitai.connected != connected:
+        civitai.connected = connected
+        if connected: log("Connected to Civitai Instance")
+        else: log("Disconnected from Civitai Instance")
 
 @sio.on('upgradeKey')
 def on_upgrade_key(payload: UpgradeKeyPayload):
-    civitai.log("Link Key upgraded")
+    log("Link Key upgraded")
     shared.opts.data['civitai_link_key'] = payload['key']
 
 @sio.on('error')
 def on_error(payload: ErrorPayload):
-    civitai.log(f"Error: {payload['msg']}")
+    log(f"Error: {payload['msg']}")
 
 def command_response(payload, history=False):
     payload['updatedAt'] = datetime.now(timezone.utc).isoformat()
@@ -188,7 +198,7 @@ def socketio_connect():
 
 def join_room(key):
     def on_join(payload):
-        civitai.log(f"Joined room {key}")
+        log(f"Joined room {key}")
     sio.emit('join', key, callback=on_join)
 
 def connect_to_civitai(demo: gr.Blocks, app):
