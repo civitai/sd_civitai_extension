@@ -6,7 +6,7 @@ from modules import hashes as sd_hashes
 # NOTE: About this file
 # ---------------------------------
 # This is not being used. It was added to see if Blake3 was faster than SHA256.
-# It was not noticably faster in our tests, so we are sticking with SHA256 for now.
+# It was not noticeably faster in our tests, so we are sticking with SHA256 for now.
 # Especially since SHA256 is the standard inside this UI.
 
 # cache_key = "civitai_hashes"
