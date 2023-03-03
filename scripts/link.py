@@ -177,10 +177,14 @@ def on_room_presence(payload: RoomPresence):
         if connected: log("Connected to Civitai Instance")
         else: log("Disconnected from Civitai Instance")
 
+upgraded_key = None
 @sio.on('upgradeKey')
 def on_upgrade_key(payload: UpgradeKeyPayload):
+    global upgraded_key
+
     log("Link Key upgraded")
     shared.opts.data['civitai_link_key'] = payload['key']
+    upgraded_key = payload['key']
 
 @sio.on('error')
 def on_error(payload: ErrorPayload):
@@ -208,9 +212,19 @@ def connect_to_civitai(demo: gr.Blocks, app):
     socketio_connect()
     join_room(key)
 
+old_short_key = None
 def on_civitai_link_key_changed():
+    global old_short_key
+
     if not sio.connected: socketio_connect()
+
+    # If the key is upgraded, don't change it back to the short key
+    if old_short_key is not None and old_short_key == shared.opts.data.get("civitai_link_key", None):
+        shared.opts.data['civitai_link_key'] = upgraded_key
+        return
+
     key = shared.opts.data.get("civitai_link_key", None)
+    if len(key) < 10: old_short_key = key
     join_room(key)
 #endregion
 
