@@ -1,4 +1,4 @@
-import extensions.sd_civitai_extension.civitai.lib as civitai
+import civitai.lib as civitai
 
 from modules import shared, script_callbacks
 

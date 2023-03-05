@@ -2,7 +2,7 @@ import json
 import re
 import os
 
-import extensions.sd_civitai_extension.civitai.lib as civitai
+import civitai.lib as civitai
 from modules import script_callbacks, sd_vae, shared
 
 additional_network_type_map = {

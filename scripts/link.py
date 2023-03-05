@@ -6,8 +6,8 @@ import gradio as gr
 import socketio
 import os
 
-import extensions.sd_civitai_extension.civitai.lib as civitai
-from extensions.sd_civitai_extension.civitai.models import Command, CommandActivitiesList, CommandResourcesAdd, CommandActivitiesCancel, CommandResourcesList, CommandResourcesRemove, ErrorPayload, JoinedPayload, RoomPresence, UpgradeKeyPayload
+import civitai.lib as civitai
+from civitai.models import Command, CommandActivitiesList, CommandResourcesAdd, CommandActivitiesCancel, CommandResourcesList, CommandResourcesRemove, ErrorPayload, JoinedPayload, RoomPresence, UpgradeKeyPayload
 
 from modules import shared, sd_models, script_callbacks, hashes
 

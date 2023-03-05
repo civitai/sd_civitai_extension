@@ -2,7 +2,7 @@ from typing import List
 import gradio as gr
 import threading
 
-import extensions.sd_civitai_extension.civitai.lib as civitai
+import civitai.lib as civitai
 
 from modules import script_callbacks, shared
 
