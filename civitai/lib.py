@@ -158,6 +158,9 @@ def get_automatic_name(type: str, filename: str, folder: str):
 def has_preview(filename: str):
     return os.path.isfile(os.path.splitext(filename)[0] + '.preview.png')
 
+def has_info(filename: str):
+    return os.path.isfile(os.path.splitext(filename)[0] + '.info.json')
+
 def get_resources_in_folder(type, folder, exts=[], exts_exclude=[]):
     resources = []
     os.makedirs(folder, exist_ok=True)
@@ -178,7 +181,7 @@ def get_resources_in_folder(type, folder, exts=[], exts_exclude=[]):
         automatic_name = get_automatic_name(type, filename, folder)
         hash = hashes.sha256(filename, f"{automatic_type}/{automatic_name}")
 
-        resources.append({'type': type, 'name': name, 'hash': hash, 'path': filename, 'hasPreview': has_preview(filename) })
+        resources.append({'type': type, 'name': name, 'hash': hash, 'path': filename, 'hasPreview': has_preview(filename), 'hasInfo': has_info(filename) })
 
     return resources
 

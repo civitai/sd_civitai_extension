@@ -5,6 +5,7 @@ div.civitai-status{
     width:24px;
     height:24px;
 	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 178 178' style='enable-background:new 0 0 178 178' xml:space='preserve'%3E%3ClinearGradient id='a' gradientUnits='userSpaceOnUse' x1='89.3' y1='1.5' x2='89.3' y2='177.014'%3E%3Cstop offset='0' style='stop-color:%23081692'/%3E%3Cstop offset='1' style='stop-color:%231e043c'/%3E%3C/linearGradient%3E%3ClinearGradient id='b' gradientUnits='userSpaceOnUse' x1='89.3' y1='1.5' x2='89.3' y2='177.014'%3E%3Cstop offset='0' style='stop-color:%231284f7'/%3E%3Cstop offset='1' style='stop-color:%230a20c9'/%3E%3C/linearGradient%3E%3Cpath style='fill:url(%23a)' d='M13.3 45.4v87.7l76 43.9 76-43.9V45.4l-76-43.9z'/%3E%3Cpath style='fill:url(%23b)' d='m89.3 29.2 52 30v60l-52 30-52-30v-60l52-30m0-27.7-76 43.9v87.8l76 43.9 76-43.9V45.4l-76-43.9z'/%3E%3Cpath style='fill:%23fff' d='m104.1 97.2-14.9 8.5-14.9-8.5v-17l14.9-8.5 14.9 8.5h18.2V69.7l-33-19-33 19v38.1l33 19 33-19V97.2z'/%3E%3C/svg%3E");
+    z-index: 1000;
 }
 
 div.civitai-status:before {

@@ -97,6 +97,6 @@
         hookChild();
 
     // clear search params
-    history.replaceState({}, document.title, location.pathname);
+    history.replaceState({}, document.title, location.href);
     await startStatusChecks();
 })();

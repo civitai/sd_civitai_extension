@@ -43,6 +43,7 @@ def load_previews():
         if (r is None): continue
 
         for file in r['files']:
+            if not 'hashes' in file or not 'SHA256' in file['hashes']: continue
             hash = file['hashes']['SHA256']
             if hash.lower() not in hashes: continue
             images = r['images']
