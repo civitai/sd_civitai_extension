@@ -7,7 +7,7 @@ from modules import script_callbacks as script_callbacks
 import civitai.lib as civitai
 from civitai.models import GenerateImageRequest, ResourceRequest
 
-def civitaiAPI(demo: gr.Blocks, app: FastAPI):
+def civitaiAPI(_: gr.Blocks, app: FastAPI):
     @app.get('/civitai/v1/link-status')
     def link_status():
         return { "connected": civitai.connected }

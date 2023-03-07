@@ -1,11 +1,13 @@
 import civitai.lib as civitai
-from scripts.link import on_civitai_link_key_changed
-
 from modules import shared, script_callbacks
+
+def on_change_key():
+    from scripts.link import on_civitai_link_key_changed
+    on_civitai_link_key_changed()
 
 def on_ui_settings():
     section = ('civitai_link', "Civitai")
-    shared.opts.add_option("civitai_link_key", shared.OptionInfo("", "Your Civitai Link Key", section=section, onchange=on_civitai_link_key_changed))
+    shared.opts.add_option("civitai_link_key", shared.OptionInfo("", "Your Civitai Link Key", section=section, onchange=on_change_key))
     shared.opts.add_option("civitai_link_logging", shared.OptionInfo(True, "Show Civitai Link events in the console", section=section))
     shared.opts.add_option("civitai_api_key", shared.OptionInfo("", "Your Civitai API Key", section=section))
     shared.opts.add_option("civitai_download_previews", shared.OptionInfo(True, "Download missing preview images on startup", section=section))

@@ -146,6 +146,8 @@ def connect_error(data):
 @sio.event
 def disconnect():
     global should_reconnect
+    global current_key
+    current_key = None
 
     log('Disconnected from Civitai Link Server')
     should_reconnect = True
@@ -198,9 +200,12 @@ def command_response(payload, history=False):
 
 #region SocketIO Connection Management
 def socketio_connect():
+    if (sio.connected): return
     sio.connect(socketio_url, socketio_path='/api/socketio')
 
+current_key = None
 def join_room(key):
+    if (current_key == key): return
     def on_join(payload):
         log(f"Joined room {key}")
     sio.emit('join', key, callback=on_join)
@@ -209,6 +214,7 @@ def connect_to_civitai(demo: gr.Blocks, app):
     key = shared.opts.data.get("civitai_link_key", None)
     if key is None: return
 
+    log('Connecting to Civitai Link Server')
     socketio_connect()
     join_room(key)
 
@@ -228,4 +234,4 @@ def on_civitai_link_key_changed():
     join_room(key)
 #endregion
 
-# script_callbacks.on_app_started(connect_to_civitai)
+script_callbacks.on_app_started(connect_to_civitai)
