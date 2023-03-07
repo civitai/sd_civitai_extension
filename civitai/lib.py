@@ -10,7 +10,7 @@ import glob
 from tqdm import tqdm
 from modules import shared, sd_models, sd_vae, hashes
 from modules.paths import models_path
-from extensions.sd_civitai_extension.civitai.models import Command, ResourceRequest
+from civitai.models import Command, ResourceRequest
 
 #region shared variables
 try:
