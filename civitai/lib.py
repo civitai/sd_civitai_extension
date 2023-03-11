@@ -186,18 +186,21 @@ def get_resources_in_folder(type, folder, exts=[], exts_exclude=[]):
     return resources
 
 resources = []
-def load_resource_list(types=['LORA', 'Hypernetwork', 'TextualInversion', 'Checkpoint', 'VAE', 'Controlnet']):
+def load_resource_list(types=['LORA', 'LoCon', 'Hypernetwork', 'TextualInversion', 'Checkpoint', 'VAE', 'Controlnet']):
     global resources
 
     # If resources is empty and types is empty, load all types
     # This is a helper to be able to get the resource list without
     # having to worry about initialization. On subsequent calls, no work will be done
     if len(resources) == 0 and len(types) == 0:
-        types = ['LORA', 'Hypernetwork', 'TextualInversion', 'Checkpoint', 'VAE', 'Controlnet']
+        types = ['LORA', 'LoCon', 'Hypernetwork', 'TextualInversion', 'Checkpoint', 'VAE', 'Controlnet']
 
     if 'LORA' in types:
         resources = [r for r in resources if r['type'] != 'LORA']
         resources += get_resources_in_folder('LORA', get_lora_dir(), ['pt', 'safetensors', 'ckpt'])
+    if 'LoCon' in types:
+        resources = [r for r in resources if r['type'] != 'LoCon']
+        resources += get_resources_in_folder('LoCon', get_lora_dir(), ['pt', 'safetensors', 'ckpt'])
     if 'Hypernetwork' in types:
         resources = [r for r in resources if r['type'] != 'Hypernetwork']
         resources += get_resources_in_folder('Hypernetwork', shared.cmd_opts.hypernetwork_dir, ['pt', 'safetensors', 'ckpt'])
@@ -280,6 +283,7 @@ def load_resource(resource: ResourceRequest, on_progress=None):
     elif resource['type'] == 'Hypernetwork': load_hypernetwork(resource, on_progress)
     elif resource['type'] == 'TextualInversion': load_textual_inversion(resource, on_progress)
     elif resource['type'] == 'LORA': load_lora(resource, on_progress)
+    elif resource['type'] == 'LoCon': load_lora(resource, on_progress)
 
     load_resource_list([resource['type']])
 
