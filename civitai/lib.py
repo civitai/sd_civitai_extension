@@ -27,6 +27,7 @@ cache_key = 'civitai'
 #region Utils
 def log(message):
     """Log a message to the console."""
+    if not shared.opts.data.get('civitai_link_logging', True): return
     print(f'Civitai: {message}')
 
 def download_file(url, dest, on_progress=None):

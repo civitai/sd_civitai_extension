@@ -4,7 +4,8 @@ import sys
 
 import git
 
-from launch import run
+import launch
+from modules import shared
 
 req_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "requirements.txt")
 
@@ -36,8 +37,8 @@ def check_versions():
     # Loop through reqs and check if installed
     for req in reqs_dict:
         available = is_package_installed(req, reqs_dict[req])
-        if available: print(f"[+] {req} version {reqs_dict[req]} installed.")
-        else : print(f"[!] {req} version {reqs_dict[req]} NOT installed.")
+        if available: print(f"[+]Civitai Link requirement: {req} version {reqs_dict[req]} installed.")
+        else : print(f"[!]Civitai Link requirement: {req} version {reqs_dict[req]} NOT installed.")
 
 base_dir = os.path.dirname(os.path.realpath(__file__))
 revision = ""
@@ -51,29 +52,27 @@ try:
 except:
     pass
 
-print("")
-print("#######################################################################################################")
-print("Initializing Civitai Link")
-print("If submitting an issue on github, please provide the below text for debugging purposes:")
-print("")
-print(f"Python revision: {sys.version}")
-print(f"Civitai Link revision: {revision}")
-print(f"SD-WebUI revision: {app_revision}")
-print("")
+if shared.opts.data.get('civitai_link_logging', True):
+    print("")
+    print("#######################################################################################################")
+    print("Initializing Civitai Link")
+    print("If submitting an issue on github, please provide the below text for debugging purposes:")
+    print("")
+    print(f"Python revision: {sys.version}")
+    print(f"Civitai Link revision: {revision}")
+    print(f"SD-WebUI revision: {app_revision}")
+    print("")
+
 civitai_skip_install = os.environ.get('CIVITAI_SKIP_INSTALL', False)
 
-try:
-    requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
-    if requirements_file == req_file:
-        civitai_skip_install = True
-except:
-    pass
-
 if not civitai_skip_install:
-    name = "Civitai Link"
-    run(f'"{sys.executable}" -m pip install -r "{req_file}"', f"Checking {name} requirements...",
-        f"Couldn't install {name} requirements.")
+    with open(req_file) as file:
+        for lib in file:
+            lib = lib.strip()
+            if not launch.is_installed(lib):
+                launch.run_pip(f"install {lib}", f"Civitai Link requirement: {lib}")
 
 check_versions()
-print("")
-print("#######################################################################################################")
+if shared.opts.data.get('civitai_link_logging', True):
+    print("")
+    print("#######################################################################################################")
