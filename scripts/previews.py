@@ -8,7 +8,7 @@ import civitai.lib as civitai
 from modules import script_callbacks, shared
 
 previewable_types = ['LORA', 'Hypernetwork', 'TextualInversion', 'Checkpoint']
-previews_update_info = ["Press Refresh button on the right to manully load previews"]
+previews_update_info = ["Press Refresh button on the right to manually load previews"]
 
 def load_previews():
     previews_update_info[0] = datetime.now().strftime("%Y/%m/%d/ %H:%M:%S")
