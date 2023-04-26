@@ -2,9 +2,7 @@
 
 Manage and interact with your Automatic 1111 SD instance right from Civitai
 
-[![Civitai Link: Alpha]
-(https://i.ytimg.com/vi/MaSRXvM05x4/maxresdefault.jpg)]
-(https://www.youtube.com/watch?v=MaSRXvM05x4 "Civitai Link: Alpha")
+[![Civitai Link: Alpha](https://i.ytimg.com/vi/MaSRXvM05x4/maxresdefault.jpg)](https://www.youtube.com/watch?v=MaSRXvM05x4 "Civitai Link: Alpha")
 
 ## Features
 - [x] Automatically download preview images for all models, LORAs, hypernetworks, and embeds
