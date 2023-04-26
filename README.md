@@ -1,8 +1,7 @@
 # Civitai Extension for Automatic 1111 Stable Diffusion Web UI
 
 Manage and interact with your Automatic 1111 SD instance right from Civitai
-
-[![Civitai Link: Alpha](https://i.ytimg.com/vi/MaSRXvM05x4/maxresdefault.jpg)](https://www.youtube.com/watch?v=MaSRXvM05x4 "Civitai Link: Alpha")
+https://user-images.githubusercontent.com/607609/234462691-ecd578cc-b0ec-49e4-8e50-a917395a6874.mp4
 
 ## Features
 - [x] Automatically download preview images for all models, LORAs, hypernetworks, and embeds
