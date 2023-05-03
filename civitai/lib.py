@@ -138,6 +138,16 @@ def get_lora_dir():
     if not lora_dir: lora_dir = shared.cmd_opts.lora_dir
     return lora_dir
 
+def get_lyco_dir():
+    try:
+        lyco_dir = shared.opts.data.get('civitai_folder_lyco', shared.cmd_opts.lyco_dir).strip()
+        if not lyco_dir: lyco_dir = shared.cmd_opts.lyco_dir
+        return lyco_dir
+    except:
+        print("LyCORIS not installed")
+        return None
+    
+
 def get_automatic_type(type: str):
     if type == 'Hypernetwork': return 'hypernet'
     return type.lower()
@@ -186,14 +196,14 @@ def get_resources_in_folder(type, folder, exts=[], exts_exclude=[]):
     return resources
 
 resources = []
-def load_resource_list(types=['LORA', 'LoCon', 'Hypernetwork', 'TextualInversion', 'Checkpoint', 'VAE', 'Controlnet']):
+def load_resource_list(types=['LORA', 'LoCon', 'LyCORIS', 'Hypernetwork', 'TextualInversion', 'Checkpoint', 'VAE', 'Controlnet']):
     global resources
 
     # If resources is empty and types is empty, load all types
     # This is a helper to be able to get the resource list without
     # having to worry about initialization. On subsequent calls, no work will be done
     if len(resources) == 0 and len(types) == 0:
-        types = ['LORA', 'LoCon', 'Hypernetwork', 'TextualInversion', 'Checkpoint', 'VAE', 'Controlnet']
+        types = ['LORA', 'LoCon', 'LyCORIS', 'Hypernetwork', 'TextualInversion', 'Checkpoint', 'VAE', 'Controlnet']
 
     if 'LORA' in types:
         resources = [r for r in resources if r['type'] != 'LORA']
@@ -201,6 +211,11 @@ def load_resource_list(types=['LORA', 'LoCon', 'Hypernetwork', 'TextualInversion
     if 'LoCon' in types:
         resources = [r for r in resources if r['type'] != 'LoCon']
         resources += get_resources_in_folder('LoCon', get_lora_dir(), ['pt', 'safetensors', 'ckpt'])
+    if 'LyCORIS' in types:
+        resources = [r for r in resources if r['type'] != 'LyCORIS']
+        lyco_dir = get_lyco_dir()
+        if lyco_dir is not None:
+            resources += get_resources_in_folder('LyCORIS', get_lyco_dir(), ['pt', 'safetensors', 'ckpt'])
     if 'Hypernetwork' in types:
         resources = [r for r in resources if r['type'] != 'Hypernetwork']
         resources += get_resources_in_folder('Hypernetwork', shared.cmd_opts.hypernetwork_dir, ['pt', 'safetensors', 'ckpt'])
