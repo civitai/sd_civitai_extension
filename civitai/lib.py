@@ -422,7 +422,7 @@ def update_resource_preview(hash: str, to_update: dict):
                 download_file(to_update['preview_url'], preview_path)
         if 'triggers' in to_update:
             trigger_path = os.path.splitext(resource['path'])[0] + '.txt'
-            if not os.path.isfile(trigger_path) or True:
+            if not os.path.isfile(trigger_path):
                 with open(trigger_path, 'w') as f:
                     f.write(to_update['triggers'])
 
