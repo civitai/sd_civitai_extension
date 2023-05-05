@@ -58,7 +58,7 @@ def load_previews():
 
             if hash.lower() in missing_trigger_hashes:
                 orig_len = len(r['trainedWords'])
-                triggers = [w for w in r['trainedWords'] if w.isascii()]
+                triggers = [w for w in r['trainedWords'] if w.isprintable()]
                 if orig_len != len(triggers):
                     info = (file['name'], file['hashes']['AutoV2'])
                     civitai.log("Skipped non-ascii trigger(s): model %s, %s" % info)
