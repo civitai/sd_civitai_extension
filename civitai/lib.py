@@ -356,6 +356,8 @@ def select_model(resource: ResourceRequest):
 
     model = load_model(resource)
 
+    if shared.sd_model.sd_checkpoint_info.model_name == model.model_name:
+        return
     if model is not None:
         sd_models.load_model(model)
         shared.opts.save(shared.config_filename)
