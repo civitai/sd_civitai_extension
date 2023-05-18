@@ -4,7 +4,8 @@ from typing import List
 import socketio
 
 import civitai.lib as civitai
-from civitai.models import Command, CommandActivitiesList, CommandResourcesAdd, CommandActivitiesCancel, CommandResourcesList, CommandResourcesRemove, ErrorPayload, JoinedPayload, RoomPresence, UpgradeKeyPayload
+import civitai.generation as generation
+from civitai.models import Command, CommandActivitiesList, CommandImageTxt2Img, CommandResourcesAdd, CommandActivitiesCancel, CommandResourcesList, CommandResourcesRemove, ErrorPayload, JoinedPayload, RoomPresence, UpgradeKeyPayload
 
 from modules import shared, sd_models, script_callbacks, hashes
 
@@ -113,6 +114,18 @@ def on_resources_remove(payload: CommandResourcesRemove):
 
     command_response(payload, history=True)
     send_resources()
+
+def on_image_txt2img(payload: CommandImageTxt2Img):
+    try:
+        result = generation.txt2img(payload)
+        payload['status'] = 'success'
+        payload['images'] = result.images
+    except Exception as e:
+        log(e)
+        payload['status'] = 'error'
+        payload['error'] = 'Failed to generate image: ' + e
+
+    command_response(payload)
 #endregion
 
 #region SocketIO Events
@@ -161,6 +174,7 @@ def on_command(payload: Command):
     elif command == 'resources:list': return on_resources_list(payload)
     elif command == 'resources:add': return on_resources_add(payload)
     elif command == 'resources:remove': return on_resources_remove(payload)
+    elif command == 'image:txt2img': return on_image_txt2img(payload)
 
 @sio.on('kicked')
 def on_kicked():
