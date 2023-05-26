@@ -27,6 +27,7 @@ cache_key = 'civitai'
 #region Utils
 def log(message):
     """Log a message to the console."""
+    if not shared.opts.data.get('civitai_link_logging', True): return
     print(f'Civitai: {message}')
 
 def download_file(url, dest, on_progress=None):
@@ -45,7 +46,7 @@ def download_file(url, dest, on_progress=None):
 
     try:
         current = 0
-        with tqdm(total=total, unit='B', unit_scale=True, unit_divisor=1024) as bar:
+        with tqdm(total=total, unit='B', unit_scale=True, unit_divisor=1024, disable=not shared.opts.data.get('civitai_link_logging', True)) as bar:
             for data in response.iter_content(chunk_size=download_chunk_size):
                 current += len(data)
                 pos = f.write(data)
