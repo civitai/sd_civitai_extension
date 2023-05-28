@@ -221,7 +221,7 @@ def load_resource_list(types=['LORA', 'LoCon', 'LyCORIS', 'Hypernetwork', 'Textu
         resources += get_resources_in_folder('Hypernetwork', shared.cmd_opts.hypernetwork_dir, ['pt', 'safetensors', 'ckpt'])
     if 'TextualInversion' in types:
         resources = [r for r in resources if r['type'] != 'TextualInversion']
-        resources += get_resources_in_folder('TextualInversion', shared.cmd_opts.embeddings_dir, ['pt'])
+        resources += get_resources_in_folder('TextualInversion', shared.cmd_opts.embeddings_dir, ['pt', 'bin', 'safetensors'])
     if 'Checkpoint' in types:
         resources = [r for r in resources if r['type'] != 'Checkpoint']
         resources += get_resources_in_folder('Checkpoint', sd_models.model_path, ['safetensors', 'ckpt'], ['vae.safetensors', 'vae.ckpt'])

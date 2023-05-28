@@ -196,8 +196,10 @@ def on_upgrade_key(payload: UpgradeKeyPayload):
     global upgraded_key
 
     log("Link Key upgraded")
-    shared.opts.data['civitai_link_key'] = payload['key']
     upgraded_key = payload['key']
+
+    shared.opts.set('civitai_link_key',  upgraded_key)
+    shared.opts.save(shared.config_filename)
 
 @sio.on('error')
 def on_error(payload: ErrorPayload):
