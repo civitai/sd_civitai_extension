@@ -196,26 +196,25 @@ def get_resources_in_folder(type, folder, exts=[], exts_exclude=[]):
     return resources
 
 resources = []
-def load_resource_list(types=['LORA', 'LoCon', 'LyCORIS', 'Hypernetwork', 'TextualInversion', 'Checkpoint', 'VAE', 'Controlnet']):
+def load_resource_list(types=['LORA', 'LyCORIS', 'Hypernetwork', 'TextualInversion', 'Checkpoint', 'VAE', 'Controlnet']):
     global resources
 
     # If resources is empty and types is empty, load all types
     # This is a helper to be able to get the resource list without
     # having to worry about initialization. On subsequent calls, no work will be done
     if len(resources) == 0 and len(types) == 0:
-        types = ['LORA', 'LoCon', 'LyCORIS', 'Hypernetwork', 'TextualInversion', 'Checkpoint', 'VAE', 'Controlnet']
+        types = ['LORA', 'LyCORIS', 'Hypernetwork', 'TextualInversion', 'Checkpoint', 'VAE', 'Controlnet']
 
     if 'LORA' in types:
         resources = [r for r in resources if r['type'] != 'LORA']
         resources += get_resources_in_folder('LORA', get_lora_dir(), ['pt', 'safetensors', 'ckpt'])
-    if 'LoCon' in types:
-        resources = [r for r in resources if r['type'] != 'LoCon']
-        resources += get_resources_in_folder('LoCon', get_lora_dir(), ['pt', 'safetensors', 'ckpt'])
     if 'LyCORIS' in types:
-        resources = [r for r in resources if r['type'] != 'LyCORIS']
+        resources = [r for r in resources if r['type'] != 'LoCon']
         lyco_dir = get_lyco_dir()
         if lyco_dir is not None:
-            resources += get_resources_in_folder('LyCORIS', get_lyco_dir(), ['pt', 'safetensors', 'ckpt'])
+            resources += get_resources_in_folder('LyCORIS', lyco_dir, ['pt', 'safetensors', 'ckpt'])
+        else:
+            resources += get_resources_in_folder('LoCon', get_lora_dir(), ['pt', 'safetensors', 'ckpt'])
     if 'Hypernetwork' in types:
         resources = [r for r in resources if r['type'] != 'Hypernetwork']
         resources += get_resources_in_folder('Hypernetwork', shared.cmd_opts.hypernetwork_dir, ['pt', 'safetensors', 'ckpt'])
