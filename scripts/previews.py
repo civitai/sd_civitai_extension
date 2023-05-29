@@ -6,7 +6,7 @@ import civitai.lib as civitai
 
 from modules import script_callbacks, shared
 
-previewable_types = ['LORA', 'Hypernetwork', 'TextualInversion', 'Checkpoint']
+previewable_types = ['LORA', 'LyCORIS', 'Hypernetwork', 'TextualInversion', 'Checkpoint']
 def load_previews():
     download_missing_previews = shared.opts.data.get('civitai_download_previews', True)
     if not download_missing_previews: return
