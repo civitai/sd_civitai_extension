@@ -138,15 +138,15 @@ def get_lora_dir():
     if not lora_dir: lora_dir = shared.cmd_opts.lora_dir
     return lora_dir
 
-def get_lyco_dir():
+def get_locon_dir():
     try:
         lyco_dir = shared.opts.data.get('civitai_folder_lyco', shared.cmd_opts.lyco_dir).strip()
         if not lyco_dir: lyco_dir = shared.cmd_opts.lyco_dir
+        if not lyco_dir: lyco_dir = os.path.join(models_path, "LyCORIS"),
         return lyco_dir
     except:
-        print("LyCORIS not installed")
-        return None
-    
+        return get_lora_dir()
+
 
 def get_automatic_type(type: str):
     if type == 'Hypernetwork': return 'hypernet'
@@ -196,25 +196,21 @@ def get_resources_in_folder(type, folder, exts=[], exts_exclude=[]):
     return resources
 
 resources = []
-def load_resource_list(types=['LORA', 'LyCORIS', 'Hypernetwork', 'TextualInversion', 'Checkpoint', 'VAE', 'Controlnet']):
+def load_resource_list(types=['LORA', 'LoCon', 'Hypernetwork', 'TextualInversion', 'Checkpoint', 'VAE', 'Controlnet']):
     global resources
 
     # If resources is empty and types is empty, load all types
     # This is a helper to be able to get the resource list without
     # having to worry about initialization. On subsequent calls, no work will be done
     if len(resources) == 0 and len(types) == 0:
-        types = ['LORA', 'LyCORIS', 'Hypernetwork', 'TextualInversion', 'Checkpoint', 'VAE', 'Controlnet']
+        types = ['LORA', 'LoCon', 'Hypernetwork', 'TextualInversion', 'Checkpoint', 'VAE', 'Controlnet']
 
     if 'LORA' in types:
         resources = [r for r in resources if r['type'] != 'LORA']
         resources += get_resources_in_folder('LORA', get_lora_dir(), ['pt', 'safetensors', 'ckpt'])
-    if 'LyCORIS' in types:
+    if 'LoCon' in types:
         resources = [r for r in resources if r['type'] != 'LoCon']
-        lyco_dir = get_lyco_dir()
-        if lyco_dir is not None:
-            resources += get_resources_in_folder('LyCORIS', lyco_dir, ['pt', 'safetensors', 'ckpt'])
-        else:
-            resources += get_resources_in_folder('LoCon', get_lora_dir(), ['pt', 'safetensors', 'ckpt'])
+        resources += get_resources_in_folder('LoCon', get_locon_dir(), ['pt', 'safetensors', 'ckpt'])
     if 'Hypernetwork' in types:
         resources = [r for r in resources if r['type'] != 'Hypernetwork']
         resources += get_resources_in_folder('Hypernetwork', shared.cmd_opts.hypernetwork_dir, ['pt', 'safetensors', 'ckpt'])
@@ -297,7 +293,7 @@ def load_resource(resource: ResourceRequest, on_progress=None):
     elif resource['type'] == 'Hypernetwork': load_hypernetwork(resource, on_progress)
     elif resource['type'] == 'TextualInversion': load_textual_inversion(resource, on_progress)
     elif resource['type'] == 'LORA': load_lora(resource, on_progress)
-    elif resource['type'] == 'LoCon': load_lora(resource, on_progress)
+    elif resource['type'] == 'LoCon': load_locon(resource, on_progress)
 
     load_resource_list([resource['type']])
 
@@ -343,6 +339,12 @@ def load_textual_inversion(resource: ResourceRequest, on_progress=None):
 def load_lora(resource: ResourceRequest, on_progress=None):
     isAvailable = load_if_missing(os.path.join(get_lora_dir(), resource['name']), resource['url'], on_progress)
     # TODO: reload lora list - not sure best way to import this
+    # if isAvailable is None:
+        # lora.list_available_loras()
+
+def load_locon(resource: ResourceRequest, on_progress=None):
+    isAvailable = load_if_missing(os.path.join(get_locon_dir(), resource['name']), resource['url'], on_progress)
+    # TODO: reload locon list - not sure best way to import this
     # if isAvailable is None:
         # lora.list_available_loras()
 
