@@ -147,6 +147,11 @@ def get_locon_dir():
     except:
         return get_lora_dir()
 
+def get_model_dir():
+    model_dir = shared.opts.data.get('civitai_folder_model', shared.cmd_opts.ckpt_dir)
+    if not model_dir: model_dir = shared.cmd_opts.ckpt_dir
+    if not model_dir: model_dir = sd_models.model_path
+    return model_dir.strip()
 
 def get_automatic_type(type: str):
     if type == 'Hypernetwork': return 'hypernet'
@@ -219,13 +224,13 @@ def load_resource_list(types=['LORA', 'LoCon', 'Hypernetwork', 'TextualInversion
         resources += get_resources_in_folder('TextualInversion', shared.cmd_opts.embeddings_dir, ['pt', 'bin', 'safetensors'])
     if 'Checkpoint' in types:
         resources = [r for r in resources if r['type'] != 'Checkpoint']
-        resources += get_resources_in_folder('Checkpoint', shared.cmd_opts.ckpt_dir, ['safetensors', 'ckpt'], ['vae.safetensors', 'vae.ckpt'])
+        resources += get_resources_in_folder('Checkpoint', get_model_dir(), ['safetensors', 'ckpt'], ['vae.safetensors', 'vae.ckpt'])
     if 'Controlnet' in types:
         resources = [r for r in resources if r['type'] != 'Controlnet']
         resources += get_resources_in_folder('Controlnet', os.path.join(models_path, "ControlNet"), ['safetensors', 'ckpt'], ['vae.safetensors', 'vae.ckpt'])
     if 'VAE' in types:
         resources = [r for r in resources if r['type'] != 'VAE']
-        resources += get_resources_in_folder('VAE', shared.cmd_opts.ckpt_dir, ['vae.pt', 'vae.safetensors', 'vae.ckpt'])
+        resources += get_resources_in_folder('VAE', get_model_dir(), ['vae.pt', 'vae.safetensors', 'vae.ckpt'])
         resources += get_resources_in_folder('VAE', sd_vae.vae_path, ['pt', 'safetensors', 'ckpt'])
 
     return resources
@@ -313,7 +318,7 @@ def fetch_model_by_hash(hash: str):
     load_resource(resource)
 
 def load_model_config(resource: ResourceRequest, on_progress=None):
-    load_if_missing(os.path.join(shared.cmd_opts.ckpt_dir, resource['name']), resource['url'], on_progress)
+    load_if_missing(os.path.join(get_model_dir(), resource['name']), resource['url'], on_progress)
 
 def load_model(resource: ResourceRequest, on_progress=None):
     model = get_model_by_hash(resource['hash'])
@@ -321,7 +326,7 @@ def load_model(resource: ResourceRequest, on_progress=None):
         log('Found model in model list')
     if model is None and resource['url'] is not None:
         log('Downloading model')
-        download_file(resource['url'], os.path.join(shared.cmd_opts.ckpt_dir, resource['name']), on_progress)
+        download_file(resource['url'], os.path.join(get_model_dir(), resource['name']), on_progress)
         sd_models.list_models()
         model = get_model_by_hash(resource['hash'])
 
