@@ -9,7 +9,7 @@ https://user-images.githubusercontent.com/607609/234462691-ecd578cc-b0ec-49e4-8e
 - [x] Automatically download a model based on the model hash upon applying pasted generation params
 - [x] Resources in Metadata: Include the SHA256 hash of all resources used in an image to be able to automatically link to corresponding resources on Civitai
 - [x] Flexible Resource Naming in Metadata: Hashify the names of resources in prompts to avoid issues with resource renaming and make prompts more portable
-- [x] **Civitai Link (Alpha):** Optional websocket connection to be able to add/remove resources and more in your SD instance while browsing Civitai or other Civitai Link enabled sites.
+- [x] **[Civitai Link (Alpha)](https://civitai.com/v/civitai-link-intro):** Optional websocket connection to be able to add/remove resources and more in your SD instance while browsing Civitai or other Civitai Link enabled sites.
 
 ## Installation
 
@@ -37,6 +37,13 @@ py install.py
 # OR
 python install.py
 ```
+
+## Frequently Asked Questions
+
+### What the Civitai Link Key? Where do I get it?
+The Civitai Link Key is a short 6 character token that you'll receive when setting up your Civitai Link instance (you can see it referenced here in this [Civitai Link installation video](https://civitai.com/v/civitai-link-installation)). The Link Key acts as a temporary secret key to connect your Stable Diffusion instance to your Civitai Account inside our link service.
+
+Since Civitai Link is still in alpha, it is currently only available to Supporters as part of the Civitai Early Access program. You can get access to Civitai Link today by [becoming a supporter](https://civitai.com/pricing) 🥰 or you can wait until we've gotten it to a state that we're ready for a full release.
 
 ## Contribute
 
