@@ -215,6 +215,7 @@ def command_response(payload, history=False):
 def socketio_connect():
     if (sio.connected): return
     sio.connect(socketio_url, socketio_path='/api/socketio')
+    log(f"connected with transport: {sio.transport()}")
 
 current_key = None
 def join_room(key):
