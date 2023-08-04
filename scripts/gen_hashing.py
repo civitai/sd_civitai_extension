@@ -57,7 +57,7 @@ def add_resource_hashes(params):
     for match in network_matches:
         network_type, network_name, network_weight = match
         resource_type = additional_network_type_map[network_type]
-        matching_resource = [r for r in resources if r['type'] == resource_type and r['name'].lower() == network_name.lower()]
+        matching_resource = [r for r in resources if r['type'] == resource_type and (r['name'].lower() == network_name.lower() or r['name'].lower().split('-')[0] == network_name.lower())]
         if len(matching_resource) > 0:
             short_hash = matching_resource[0]['hash'][:10]
             resource_hashes[f'{network_type}:{network_name}'] = short_hash
