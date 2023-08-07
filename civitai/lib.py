@@ -432,15 +432,22 @@ def clear_hypernetwork():
 #endregion
 
 #region Resource Management
-def update_resource_preview(hash: str, preview_url: str):
+def update_resource_preview(hash: str, to_update: dict):
     resources = load_resource_list([])
     matches = [resource for resource in resources if hash.lower() == resource['hash']]
     if len(matches) == 0: return
 
     for resource in matches:
-        # download image and save to resource['path'] - ext + '.preview.png'
-        preview_path = os.path.splitext(resource['path'])[0] + '.preview.png'
-        download_file(preview_url, preview_path)
+        if 'preview_url' in to_update:
+            # download image and save to resource['path'] - ext + '.preview.png'
+            preview_path = os.path.splitext(resource['path'])[0] + '.preview.png'
+            if not os.path.isfile(preview_path):
+                download_file(to_update['preview_url'], preview_path)
+        if 'triggers' in to_update:
+            trigger_path = os.path.splitext(resource['path'])[0] + '.txt'
+            if not os.path.isfile(trigger_path):
+                with open(trigger_path, 'w') as f:
+                    f.write(to_update['triggers'])
 
 #endregion Selecting Resources
 
