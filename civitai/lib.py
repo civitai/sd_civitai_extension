@@ -174,7 +174,7 @@ def has_preview(filename: str):
     return os.path.isfile(os.path.splitext(filename)[0] + '.preview.png')
 
 def has_info(filename: str):
-    return os.path.isfile(os.path.splitext(filename)[0] + '.info.json')
+    return os.path.isfile(os.path.splitext(filename)[0] + '.json')
 
 def get_resources_in_folder(type, folder, exts=[], exts_exclude=[]):
     resources = []
