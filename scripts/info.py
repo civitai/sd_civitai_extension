@@ -66,7 +66,6 @@ def load_info():
                 "description": r['description'],
                 "sd version": sd_version,
                 "activation text": ", ".join(r['trainedWords']),
-                "preferred weight": 0.8,
                 "notes": "",
             }
             
