@@ -47,6 +47,7 @@ def load_previews():
             hash = file['hashes']['SHA256']
             if hash.lower() not in hashes: continue
             images = r['images']
+            images = [i for i in images if i['type'] == 'image']
             if (nsfw_previews is False): images = [i for i in images if i['nsfw'] is False]
             if (len(images) == 0): continue
             image_url = images[0]['url']
