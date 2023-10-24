@@ -201,14 +201,14 @@ def get_resources_in_folder(type, folder, exts=[], exts_exclude=[]):
     return resources
 
 resources = []
-def load_resource_list(types=['LORA', 'LoCon', 'Hypernetwork', 'TextualInversion', 'Checkpoint', 'VAE', 'Controlnet']):
+def load_resource_list(types=['LORA', 'LoCon', 'Hypernetwork', 'TextualInversion', 'Checkpoint', 'VAE', 'Controlnet', 'Upscaler']):
     global resources
 
     # If resources is empty and types is empty, load all types
     # This is a helper to be able to get the resource list without
     # having to worry about initialization. On subsequent calls, no work will be done
     if len(resources) == 0 and len(types) == 0:
-        types = ['LORA', 'LoCon', 'Hypernetwork', 'TextualInversion', 'Checkpoint', 'VAE', 'Controlnet']
+        types = ['LORA', 'LoCon', 'Hypernetwork', 'TextualInversion', 'Checkpoint', 'VAE', 'Controlnet', 'Upscaler']
 
     if 'LORA' in types:
         resources = [r for r in resources if r['type'] != 'LORA']
@@ -228,6 +228,9 @@ def load_resource_list(types=['LORA', 'LoCon', 'Hypernetwork', 'TextualInversion
     if 'Controlnet' in types:
         resources = [r for r in resources if r['type'] != 'Controlnet']
         resources += get_resources_in_folder('Controlnet', os.path.join(models_path, "ControlNet"), ['safetensors', 'ckpt'], ['vae.safetensors', 'vae.ckpt'])
+    if 'Upscaler' in types:
+        resources = [r for r in resources if r['type'] != 'Upscaler']
+        resources += get_resources_in_folder('Upscaler', os.path.join(models_path, "ESRGAN"), ['safetensors', 'ckpt', 'pt'])
     if 'VAE' in types:
         resources = [r for r in resources if r['type'] != 'VAE']
         resources += get_resources_in_folder('VAE', get_model_dir(), ['vae.pt', 'vae.safetensors', 'vae.ckpt'])
@@ -295,6 +298,7 @@ def load_resource(resource: ResourceRequest, on_progress=None):
     if resource['type'] == 'Checkpoint': load_model(resource, on_progress)
     elif resource['type'] == 'CheckpointConfig': load_model_config(resource, on_progress)
     elif resource['type'] == 'Controlnet': load_controlnet(resource, on_progress)
+    elif resource['type'] == 'Upscaler': load_upscaler(resource, on_progress)
     elif resource['type'] == 'Hypernetwork': load_hypernetwork(resource, on_progress)
     elif resource['type'] == 'TextualInversion': load_textual_inversion(resource, on_progress)
     elif resource['type'] == 'LORA': load_lora(resource, on_progress)
@@ -337,6 +341,12 @@ def load_controlnet(resource: ResourceRequest, on_progress=None):
     # TODO: reload controlnet list - not sure best way to import this
     # if isAvailable is None:
         # controlnet.list_available_models()
+
+def load_upscaler(resource: ResourceRequest, on_progress=None):
+    isAvailable = load_if_missing(os.path.join(models_path, 'ESRGAN', resource['name']), resource['url'], on_progress)
+    # TODO: reload upscaler list - not sure best way to import this
+    # if isAvailable is None:
+        # upscaler.list_available_models()
 
 def load_textual_inversion(resource: ResourceRequest, on_progress=None):
     load_if_missing(os.path.join(shared.cmd_opts.embeddings_dir, resource['name']), resource['url'], on_progress)
