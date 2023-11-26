@@ -9,6 +9,7 @@ import glob
 
 from tqdm import tqdm
 from modules import shared, sd_models, sd_vae, hashes
+from modules.ui_extra_networks import extra_pages
 from modules.paths import models_path
 from civitai.models import Command, ResourceRequest
 
@@ -22,6 +23,8 @@ connected = False
 user_agent = 'CivitaiLink:Automatic1111'
 download_chunk_size = 8192
 cache_key = 'civitai'
+refresh_previews_function = None
+refresh_info_function = None
 #endregion
 
 #region Utils
@@ -353,15 +356,23 @@ def load_textual_inversion(resource: ResourceRequest, on_progress=None):
 
 def load_lora(resource: ResourceRequest, on_progress=None):
     isAvailable = load_if_missing(os.path.join(get_lora_dir(), resource['name']), resource['url'], on_progress)
-    # TODO: reload lora list - not sure best way to import this
-    # if isAvailable is None:
-        # lora.list_available_loras()
+    if isAvailable is None:
+        page = next(iter([x for x in extra_pages if x.name == "lora"]), None)
+        if page is not None:
+            log('Refreshing Loras')
+            page.refresh()
+            if refresh_previews_function is not None:
+                refresh_previews_function()
+            if refresh_info_function is not None:
+                refresh_info_function()
 
 def load_locon(resource: ResourceRequest, on_progress=None):
     isAvailable = load_if_missing(os.path.join(get_locon_dir(), resource['name']), resource['url'], on_progress)
-    # TODO: reload locon list - not sure best way to import this
-    # if isAvailable is None:
-        # lora.list_available_loras()
+    if isAvailable is None:
+        page = next(iter([x for x in extra_pages if x.name == "lora"]), None)
+        if page is not None:
+            log('Refreshing Locons')
+            page.refresh()
 
 def load_vae(resource: ResourceRequest, on_progress=None):
     # TODO: find by hash instead of name

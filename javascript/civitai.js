@@ -69,23 +69,60 @@
     }
 
     let statusElement = document.createElement('div');
+    let alphaStatusElement = document.createElement('div');
     let currentStatus = false;
+    let currentAlphaStatus = false;
     async function checkStatus() {
-        const { connected } = await fetch('/civitai/v1/link-status').then(x=>x.json());
+        const { connected,alpha_connected } = await fetch('/civitai/v1/link-status').then(x=>x.json());
         if (currentStatus != connected) {
             currentStatus = connected;
             statusElement.classList.toggle('connected', connected);
         }
+        if (currentAlphaStatus != alpha_connected) {
+            currentAlphaStatus = alpha_connected;
+            alphaStatusElement.classList.toggle('connected', alpha_connected);
+        }
+    }
+    async function checkAlphaStatus() {
+        const { connected } = await fetch('/civitai/v1/alpha-link-status').then(x=>x.json());
+        if (currentStatus != connected) {
+            currentStatus = connected;
+            alphaStatusElement.classList.toggle('alpha-connected', connected);
+        }
     }
     async function startStatusChecks() {
         statusElement.id = 'civitai-status';
+      
         statusElement.classList.add('civitai-status');
+        alphaStatusElement.id = 'civitai-alpha-status';
+        alphaStatusElement.classList.add('civitai-alpha-status');
         await getElement('.gradio-container'); // wait for gradio to load
         gradioApp().appendChild(statusElement);
-
+        gradioApp().appendChild(alphaStatusElement);
+        alphaStatusElement.addEventListener('click',async function(){
+            if(true || !currentAlphaStatus)
+            {
+            const { message } = await fetch('/civitai/v1/reconnect-link').then(x=>x.json());
+                if(message == 'Civitai Link active')
+                {
+                    notify({success:true,message:message});
+                }
+                else
+                {
+                    notify({success:false,message:message});
+                }
+                console.log(message);
+            }
+            else
+            {
+                notify({success:true,message:'Not disconnected'});
+            }
+           
+        });
         setInterval(checkStatus, 1000 * 10);
         checkStatus();
     }
+    
 
     // Bootstrap
     const searchParams = new URLSearchParams(location.search);
