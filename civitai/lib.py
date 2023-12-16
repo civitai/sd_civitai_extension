@@ -171,7 +171,12 @@ def get_automatic_name(type: str, filename: str, folder: str):
     return os.path.splitext(fullname)[0]
 
 def has_preview(filename: str):
-    return os.path.isfile(os.path.splitext(filename)[0] + '.preview.png')
+    preview_exts = [".jpg", ".png", ".jpeg", ".gif"]
+    preview_exts = [*preview_exts, *[".preview" + x for x in preview_exts]]
+    for ext in preview_exts:
+        if os.path.exists(os.path.splitext(filename)[0] + ext):
+            return True
+    return False
 
 def has_info(filename: str):
     return os.path.isfile(os.path.splitext(filename)[0] + '.json')
