@@ -42,7 +42,6 @@ python install.py
 
 ***note:*** for the correct usage of this extension, make sure to **remove** the `--no-hashing` launch option from Automatic 1111 (if you are using it) as this extension relies on hash information provided it.
 
-
 ## Frequently Asked Questions
 
 ### What the Civitai Link Key? Where do I get it?
