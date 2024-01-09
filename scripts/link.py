@@ -12,7 +12,9 @@ def connect_to_civitai(demo: gr.Blocks, app):
     link.log('Connecting to Civitai Link Server')
     link.socketio_connect()
     link.join_room(key)
-    
+def get_link_status()-> bool:
+    return link.is_connected()
+
 def reconnect_to_civitai() -> str:
     key = shared.opts.data.get("civitai_link_key", None)
     # If key is empty or not set, don't connect to Civitai Link
@@ -20,11 +22,7 @@ def reconnect_to_civitai() -> str:
         msg = 'Civitai Link Key is empty'
         link.log(msg)
         return msg
-    if False and link.is_connected():
-        msg = 'Civitai Link already active'
-        link.log('Civitai Link already active')
-        return msg
-    
+   
     link.log('Reconnecting to Civitai Link Server')
     link.socketio_connect()
     link.rejoin_room(key)
@@ -34,5 +32,6 @@ def reconnect_to_civitai() -> str:
         return msg
     else:
         return 'Civitai Link not connected'
+
 script_callbacks.on_app_started(connect_to_civitai)
 
