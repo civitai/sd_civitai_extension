@@ -20,6 +20,8 @@ https://user-images.githubusercontent.com/607609/234462691-ecd578cc-b0ec-49e4-8e
 4. Press install and wait for it to complete
 5. **Restart Automatic1111** (Reloading the UI will not install the necessary requirements)
 
+***note:*** for the correct usage of this extension, make sure to **remove** the `--no-hashing` launch option from Automatic 1111 (if you are using it) as this extension relies on hash information provided it.
+
 ### Manually
 1. Download the repo using any method (zip download or cloning)
 ```sh
@@ -37,6 +39,8 @@ py install.py
 # OR
 python install.py
 ```
+
+***note:*** for the correct usage of this extension, make sure to **remove** the `--no-hashing` launch option from Automatic 1111 (if you are using it) as this extension relies on hash information provided it.
 
 ## Frequently Asked Questions
 
