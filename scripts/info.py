@@ -83,6 +83,7 @@ def load_info():
 
 # Automatically pull model with corresponding hash from Civitai
 def start_load_info(demo: gr.Blocks, app):
+    civitai.refresh_info_function = load_info
     thread = threading.Thread(target=load_info)
     thread.start()
 

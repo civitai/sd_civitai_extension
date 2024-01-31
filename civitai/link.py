@@ -215,6 +215,8 @@ def command_response(payload, history=False):
 def socketio_connect():
     if (sio.connected): return
     sio.connect(socketio_url, socketio_path='/api/socketio')
+def is_connected() -> bool:
+    return sio.connected
 
 current_key = None
 def join_room(key):
@@ -222,6 +224,10 @@ def join_room(key):
     def on_join(payload):
         log(f"Joined room {key}")
     sio.emit('join', key, callback=on_join)
+    
+def rejoin_room(key):
+    current_key = None
+    join_room(key)
 
 old_short_key = None
 def on_civitai_link_key_changed():

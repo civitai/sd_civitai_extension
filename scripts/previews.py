@@ -57,6 +57,7 @@ def load_previews():
 
 # Automatically pull model with corresponding hash from Civitai
 def start_load_previews(demo: gr.Blocks, app):
+    civitai.refresh_previews_function = load_previews
     thread = threading.Thread(target=load_previews)
     thread.start()
 
