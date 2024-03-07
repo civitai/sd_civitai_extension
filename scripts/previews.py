@@ -47,7 +47,7 @@ def load_previews():
             hash = file['hashes']['SHA256']
             if hash.lower() not in hashes: continue
             images = r['images']
-            if (nsfw_previews is False): images = [i for i in images if i['nsfw'] is False]
+            if (nsfw_previews is False): images = [i for i in images if i['nsfw'] == 'None']
             if (len(images) == 0): continue
             image_url = images[0]['url']
             civitai.update_resource_preview(hash, image_url)
