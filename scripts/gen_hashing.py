@@ -3,7 +3,7 @@ import re
 import os
 
 import civitai.lib as civitai
-from modules import script_callbacks, sd_vae, shared
+from modules import script_callbacks, sd_vae, shared, hashes
 
 additional_network_type_map = {
     'lora': 'LORA',
@@ -61,6 +61,30 @@ def add_resource_hashes(params):
         if len(matching_resource) > 0:
             short_hash = matching_resource[0]['hash'][:10]
             resource_hashes[f'{network_type}:{network_name}'] = short_hash
+
+    # check loaded_loras
+    loaded = []
+    try:
+        import lora
+        loaded = lora.loaded_lora
+    except Exception:
+        pass
+    for item in loaded:
+        name = item.name
+        if f'lora:{name}' in resource_hashes.keys():
+            continue
+
+        lora_on_disk = item.lora_on_disk if hasattr(item, "lora_on_disk") else item.network_on_disk if hasattr(item, "network_on_disk") else None
+        if lora_on_disk is None:
+            continue
+
+        hash = hashes.sha256(lora_on_disk.filename, "lora/" + lora_on_disk.name)
+        if not hash:
+            continue
+        short_hash = hash[0:10]
+
+        name = name.replace(":", "").replace(",", "")
+        resource_hashes[f'lora:{name}'] = short_hash
 
     # Check for model hash in generation parameters
     model_match = re.search(model_hash_pattern, generation_params)
