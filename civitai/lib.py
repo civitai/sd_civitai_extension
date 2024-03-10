@@ -321,12 +321,12 @@ def fetch_model_by_hash(hash: str):
         return None
 
     file = [x for x in model_version['files'] if x['primary'] == True][0]
-    resource = ResourceRequest(
-        name=file['name'],
-        type='Checkpoint',
-        hash=file['hashes']['SHA256'],
-        url=file['downloadUrl']
-    )
+    resource = {
+        'name': file['name'],
+        'type': 'Checkpoint',
+        'hash': file['hashes']['SHA256'],
+        'url': file['downloadUrl']
+	}
     load_resource(resource)
 
 def load_model_config(resource: ResourceRequest, on_progress=None):
