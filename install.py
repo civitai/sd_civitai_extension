@@ -4,9 +4,16 @@ import sys
 
 import git
 
-from launch import run
-
 req_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "requirements.txt")
+
+def run(command, desc=None, errdesc=None):
+    try:
+        if desc:
+            print(f"[Info] {desc}")
+        subprocess.check_call(command, shell=True)
+    except subprocess.CalledProcessError as e:
+        print(f"[Error] {errdesc or 'Subprocess failed'}: {e}")
+        sys.exit(1)
 
 def is_package_installed(package_name, version):
     # strip [] from package name
